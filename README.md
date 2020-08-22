@@ -23,8 +23,7 @@
 - The project aims at develop a 5-DoF manipulator capable of precise imitation of the human arm. The manipulator will be tested in a simulated environment and then implemented in reality.
 
 - The first challenge is to track the position of human joints and acquire joint parameters data.
-A motion-capture system consisting of sensors attached to the human arm as well as vision-based
-solutions using tracking cameras will be used for the purpose.
+A motion-capture system consisting of sensors attached to the human arm will be used for the purpose.
 
 - The next challenge is to map the motion of the human to the manipulator, with kinematic and dynamic
 modeling of the manipulator for precise and accurate control.
