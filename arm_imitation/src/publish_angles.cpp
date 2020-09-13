@@ -53,8 +53,8 @@ int main(int argc, char **argv)
    * A count of how many messages we have sent. This is used to create
    * a unique string for each message.
    */
-  int count = 0;
-	int count1, count2, count3, count4;
+  double count = 0;
+	double count1, count2, count3, count4;
   while (ros::ok())
   {
     /**
