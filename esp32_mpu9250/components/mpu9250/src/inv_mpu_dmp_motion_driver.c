@@ -29,8 +29,8 @@
  *      uint8_t length, uint8_t const *data)
  * i2c_read(uint8_t slave_addr, uint8_t reg_addr,
  *      uint8_t length, uint8_t *data)
- * delay_ms(unsigned long num_ms)
- * get_ms(unsigned long *count)
+ * delay_ms(uint32_t num_ms)
+ * get_ms(uint32_t *count)
  */
 #include "i2c_utils.h"
 #define i2c_write(a, b, c, d) i2c_write_to_slave(a, b, c, d)
@@ -426,7 +426,7 @@ static const uint8_t dmp_memory[DMP_CODE_SIZE] = {
     0xac, 0xde, 0x80, 0x92, 0xa2, 0xf2, 0x4c, 0x82, 0xa8, 0xf1, 0xca, 0xf2, 0x35, 0xf1, 0x96, 0x88,
     0xa6, 0xd9, 0x00, 0xd8, 0xf1, 0xff};
 
-static const unsigned short sStartAddress = 0x0400;
+static const uint16_t sStartAddress = 0x0400;
 
 /* END OF SECTION COPIED FROM dmpDefaultMPU6050.c */
 
@@ -453,9 +453,9 @@ struct dmp_s
 {
     void (*tap_cb)(uint8_t count, uint8_t direction);
     void (*android_orient_cb)(uint8_t orientation);
-    unsigned short orient;
-    unsigned short feature_mask;
-    unsigned short fifo_rate;
+    uint16_t orient;
+    uint16_t feature_mask;
+    uint16_t fifo_rate;
     uint8_t packet_length;
 };
 
@@ -484,7 +484,7 @@ int dmp_load_motion_driver_firmware(void)
  *  @param[in]  orient  Gyro and accel orientation in body frame.
  *  @return     0 if successful.
  */
-int dmp_set_orientation(unsigned short orient)
+int dmp_set_orientation(uint16_t orient)
 {
     uint8_t gyro_regs[3], accel_regs[3];
     const uint8_t gyro_axes[3] = {DINA4C, DINACD, DINA6C};
@@ -542,9 +542,9 @@ int dmp_set_orientation(unsigned short orient)
  *  @param[in]  bias    Gyro biases in q16.
  *  @return     0 if successful.
  */
-int dmp_set_gyro_bias(long *bias)
+int dmp_set_gyro_bias(int32_t *bias)
 {
-    long gyro_bias_body[3];
+    int32_t gyro_bias_body[3];
     uint8_t regs[4];
 
     gyro_bias_body[0] = bias[dmp.orient & 3];
@@ -558,13 +558,13 @@ int dmp_set_gyro_bias(long *bias)
         gyro_bias_body[2] *= -1;
 
 #ifdef EMPL_NO_64BIT
-    gyro_bias_body[0] = (long)(((float)gyro_bias_body[0] * GYRO_SF) / 1073741824.f);
-    gyro_bias_body[1] = (long)(((float)gyro_bias_body[1] * GYRO_SF) / 1073741824.f);
-    gyro_bias_body[2] = (long)(((float)gyro_bias_body[2] * GYRO_SF) / 1073741824.f);
+    gyro_bias_body[0] = (int32_t)(((float)gyro_bias_body[0] * GYRO_SF) / 1073741824.f);
+    gyro_bias_body[1] = (int32_t)(((float)gyro_bias_body[1] * GYRO_SF) / 1073741824.f);
+    gyro_bias_body[2] = (int32_t)(((float)gyro_bias_body[2] * GYRO_SF) / 1073741824.f);
 #else
-    gyro_bias_body[0] = (long)(((long long)gyro_bias_body[0] * GYRO_SF) >> 30);
-    gyro_bias_body[1] = (long)(((long long)gyro_bias_body[1] * GYRO_SF) >> 30);
-    gyro_bias_body[2] = (long)(((long long)gyro_bias_body[2] * GYRO_SF) >> 30);
+    gyro_bias_body[0] = (int32_t)(((int64_t)gyro_bias_body[0] * GYRO_SF) >> 30);
+    gyro_bias_body[1] = (int32_t)(((int64_t)gyro_bias_body[1] * GYRO_SF) >> 30);
+    gyro_bias_body[2] = (int32_t)(((int64_t)gyro_bias_body[2] * GYRO_SF) >> 30);
 #endif
 
     regs[0] = (uint8_t)((gyro_bias_body[0] >> 24) & 0xFF);
@@ -594,15 +594,15 @@ int dmp_set_gyro_bias(long *bias)
  *  @param[in]  bias    Accel biases in q16.
  *  @return     0 if successful.
  */
-int dmp_set_accel_bias(long *bias)
+int dmp_set_accel_bias(int32_t *bias)
 {
-    long accel_bias_body[3];
+    int32_t accel_bias_body[3];
     uint8_t regs[12];
-    long long accel_sf;
-    unsigned short accel_sens;
+    int64_t accel_sf;
+    uint16_t accel_sens;
 
     mpu_get_accel_sens(&accel_sens);
-    accel_sf = (long long)accel_sens << 15;
+    accel_sf = (int64_t)accel_sens << 15;
     noop;
 
     accel_bias_body[0] = bias[dmp.orient & 3];
@@ -616,13 +616,13 @@ int dmp_set_accel_bias(long *bias)
         accel_bias_body[2] *= -1;
 
 #ifdef EMPL_NO_64BIT
-    accel_bias_body[0] = (long)(((float)accel_bias_body[0] * accel_sf) / 1073741824.f);
-    accel_bias_body[1] = (long)(((float)accel_bias_body[1] * accel_sf) / 1073741824.f);
-    accel_bias_body[2] = (long)(((float)accel_bias_body[2] * accel_sf) / 1073741824.f);
+    accel_bias_body[0] = (int32_t)(((float)accel_bias_body[0] * accel_sf) / 1073741824.f);
+    accel_bias_body[1] = (int32_t)(((float)accel_bias_body[1] * accel_sf) / 1073741824.f);
+    accel_bias_body[2] = (int32_t)(((float)accel_bias_body[2] * accel_sf) / 1073741824.f);
 #else
-    accel_bias_body[0] = (long)(((long long)accel_bias_body[0] * accel_sf) >> 30);
-    accel_bias_body[1] = (long)(((long long)accel_bias_body[1] * accel_sf) >> 30);
-    accel_bias_body[2] = (long)(((long long)accel_bias_body[2] * accel_sf) >> 30);
+    accel_bias_body[0] = (int32_t)(((int64_t)accel_bias_body[0] * accel_sf) >> 30);
+    accel_bias_body[1] = (int32_t)(((int64_t)accel_bias_body[1] * accel_sf) >> 30);
+    accel_bias_body[2] = (int32_t)(((int64_t)accel_bias_body[2] * accel_sf) >> 30);
 #endif
 
     regs[0] = (uint8_t)((accel_bias_body[0] >> 24) & 0xFF);
@@ -646,11 +646,11 @@ int dmp_set_accel_bias(long *bias)
  *  @param[in]  rate    Desired fifo rate (Hz).
  *  @return     0 if successful.
  */
-int dmp_set_fifo_rate(unsigned short rate)
+int dmp_set_fifo_rate(uint16_t rate)
 {
     const uint8_t regs_end[12] = {DINAFE, DINAF2, DINAAB,
                                   0xc4, DINAAA, DINAF1, DINADF, DINADF, 0xBB, 0xAF, DINADF, DINADF};
-    unsigned short div;
+    uint16_t div;
     uint8_t tmp[8];
 
     if (rate > DMP_SAMPLE_RATE)
@@ -672,7 +672,7 @@ int dmp_set_fifo_rate(unsigned short rate)
  *  @param[out] rate    Current fifo rate (Hz).
  *  @return     0 if successful.
  */
-int dmp_get_fifo_rate(unsigned short *rate)
+int dmp_get_fifo_rate(uint16_t *rate)
 {
     rate[0] = dmp.fifo_rate;
     return 0;
@@ -684,11 +684,11 @@ int dmp_get_fifo_rate(unsigned short *rate)
  *  @param[in]  thresh  Tap threshold, in mg/ms.
  *  @return     0 if successful.
  */
-int dmp_set_tap_thresh(uint8_t axis, unsigned short thresh)
+int dmp_set_tap_thresh(uint8_t axis, uint16_t thresh)
 {
     uint8_t tmp[4], accel_fsr;
     float scaled_thresh;
-    unsigned short dmp_thresh, dmp_thresh_2;
+    uint16_t dmp_thresh, dmp_thresh_2;
     if (!(axis & TAP_XYZ) || thresh > 1600)
         return -1;
 
@@ -698,24 +698,24 @@ int dmp_set_tap_thresh(uint8_t axis, unsigned short thresh)
     switch (accel_fsr)
     {
     case 2:
-        dmp_thresh = (unsigned short)(scaled_thresh * 16384);
+        dmp_thresh = (uint16_t)(scaled_thresh * 16384);
         /* dmp_thresh * 0.75 */
-        dmp_thresh_2 = (unsigned short)(scaled_thresh * 12288);
+        dmp_thresh_2 = (uint16_t)(scaled_thresh * 12288);
         break;
     case 4:
-        dmp_thresh = (unsigned short)(scaled_thresh * 8192);
+        dmp_thresh = (uint16_t)(scaled_thresh * 8192);
         /* dmp_thresh * 0.75 */
-        dmp_thresh_2 = (unsigned short)(scaled_thresh * 6144);
+        dmp_thresh_2 = (uint16_t)(scaled_thresh * 6144);
         break;
     case 8:
-        dmp_thresh = (unsigned short)(scaled_thresh * 4096);
+        dmp_thresh = (uint16_t)(scaled_thresh * 4096);
         /* dmp_thresh * 0.75 */
-        dmp_thresh_2 = (unsigned short)(scaled_thresh * 3072);
+        dmp_thresh_2 = (uint16_t)(scaled_thresh * 3072);
         break;
     case 16:
-        dmp_thresh = (unsigned short)(scaled_thresh * 2048);
+        dmp_thresh = (uint16_t)(scaled_thresh * 2048);
         /* dmp_thresh * 0.75 */
-        dmp_thresh_2 = (unsigned short)(scaled_thresh * 1536);
+        dmp_thresh_2 = (uint16_t)(scaled_thresh * 1536);
         break;
     default:
         return -1;
@@ -790,9 +790,9 @@ int dmp_set_tap_count(uint8_t min_taps)
  *  @param[in]  time    Milliseconds between taps.
  *  @return     0 if successful.
  */
-int dmp_set_tap_time(unsigned short time)
+int dmp_set_tap_time(uint16_t time)
 {
-    unsigned short dmp_time;
+    uint16_t dmp_time;
     uint8_t tmp[2];
 
     dmp_time = time / (1000 / DMP_SAMPLE_RATE);
@@ -806,9 +806,9 @@ int dmp_set_tap_time(unsigned short time)
  *  @param[in]  time    Max milliseconds between taps.
  *  @return     0 if successful.
  */
-int dmp_set_tap_time_multi(unsigned short time)
+int dmp_set_tap_time_multi(uint16_t time)
 {
-    unsigned short dmp_time;
+    uint16_t dmp_time;
     uint8_t tmp[2];
 
     dmp_time = time / (1000 / DMP_SAMPLE_RATE);
@@ -824,14 +824,14 @@ int dmp_set_tap_time_multi(unsigned short time)
  *  @param[in]  thresh  Gyro threshold in dps.
  *  @return     0 if successful.
  */
-int dmp_set_shake_reject_thresh(long sf, unsigned short thresh)
+int dmp_set_shake_reject_thresh(int32_t sf, uint16_t thresh)
 {
     uint8_t tmp[4];
-    long thresh_scaled = sf / 1000 * thresh;
-    tmp[0] = (uint8_t)(((long)thresh_scaled >> 24) & 0xFF);
-    tmp[1] = (uint8_t)(((long)thresh_scaled >> 16) & 0xFF);
-    tmp[2] = (uint8_t)(((long)thresh_scaled >> 8) & 0xFF);
-    tmp[3] = (uint8_t)((long)thresh_scaled & 0xFF);
+    int32_t thresh_scaled = sf / 1000 * thresh;
+    tmp[0] = (uint8_t)(((int32_t)thresh_scaled >> 24) & 0xFF);
+    tmp[1] = (uint8_t)(((int32_t)thresh_scaled >> 16) & 0xFF);
+    tmp[2] = (uint8_t)(((int32_t)thresh_scaled >> 8) & 0xFF);
+    tmp[3] = (uint8_t)((int32_t)thresh_scaled & 0xFF);
     return mpu_write_mem(D_1_92, 4, tmp);
 }
 
@@ -843,7 +843,7 @@ int dmp_set_shake_reject_thresh(long sf, unsigned short thresh)
  *  @param[in]  time    Time in milliseconds.
  *  @return     0 if successful.
  */
-int dmp_set_shake_reject_time(unsigned short time)
+int dmp_set_shake_reject_time(uint16_t time)
 {
     uint8_t tmp[2];
 
@@ -861,7 +861,7 @@ int dmp_set_shake_reject_time(unsigned short time)
  *  @param[in]  time    Time in milliseconds.
  *  @return     0 if successful.
  */
-int dmp_set_shake_reject_timeout(unsigned short time)
+int dmp_set_shake_reject_timeout(uint16_t time)
 {
     uint8_t tmp[2];
 
@@ -876,7 +876,7 @@ int dmp_set_shake_reject_timeout(unsigned short time)
  *  @param[out] count   Number of steps detected.
  *  @return     0 if successful.
  */
-int dmp_get_pedometer_step_count(unsigned long *count)
+int dmp_get_pedometer_step_count(uint32_t *count)
 {
     uint8_t tmp[4];
     if (!count)
@@ -885,8 +885,8 @@ int dmp_get_pedometer_step_count(unsigned long *count)
     if (mpu_read_mem(D_PEDSTD_STEPCTR, 4, tmp))
         return -1;
 
-    count[0] = ((unsigned long)tmp[0] << 24) | ((unsigned long)tmp[1] << 16) |
-               ((unsigned long)tmp[2] << 8) | tmp[3];
+    count[0] = ((uint32_t)tmp[0] << 24) | ((uint32_t)tmp[1] << 16) |
+               ((uint32_t)tmp[2] << 8) | tmp[3];
     return 0;
 }
 
@@ -897,7 +897,7 @@ int dmp_get_pedometer_step_count(unsigned long *count)
  *  @param[in]  count   New step count.
  *  @return     0 if successful.
  */
-int dmp_set_pedometer_step_count(unsigned long count)
+int dmp_set_pedometer_step_count(uint32_t count)
 {
     uint8_t tmp[4];
 
@@ -913,7 +913,7 @@ int dmp_set_pedometer_step_count(unsigned long count)
  *  @param[in]  time    Walk time in milliseconds.
  *  @return     0 if successful.
  */
-int dmp_get_pedometer_walk_time(unsigned long *time)
+int dmp_get_pedometer_walk_time(uint32_t *time)
 {
     uint8_t tmp[4];
     if (!time)
@@ -922,8 +922,8 @@ int dmp_get_pedometer_walk_time(unsigned long *time)
     if (mpu_read_mem(D_PEDSTD_TIMECTR, 4, tmp))
         return -1;
 
-    time[0] = (((unsigned long)tmp[0] << 24) | ((unsigned long)tmp[1] << 16) |
-               ((unsigned long)tmp[2] << 8) | tmp[3]) *
+    time[0] = (((uint32_t)tmp[0] << 24) | ((uint32_t)tmp[1] << 16) |
+               ((uint32_t)tmp[2] << 8) | tmp[3]) *
               20;
     return 0;
 }
@@ -934,7 +934,7 @@ int dmp_get_pedometer_walk_time(unsigned long *time)
  *  a race condition if called while the pedometer is enabled.
  *  @param[in]  time    New walk time in milliseconds.
  */
-int dmp_set_pedometer_walk_time(unsigned long time)
+int dmp_set_pedometer_walk_time(uint32_t time)
 {
     uint8_t tmp[4];
 
@@ -964,7 +964,7 @@ int dmp_set_pedometer_walk_time(unsigned long time)
  *  @param[in]  mask    Mask of features to enable.
  *  @return     0 if successful.
  */
-int dmp_enable_feature(unsigned short mask)
+int dmp_enable_feature(uint16_t mask)
 {
     uint8_t tmp[10];
 
@@ -1101,7 +1101,7 @@ int dmp_enable_feature(unsigned short mask)
  *  @param[out] Mask of enabled features.
  *  @return     0 if successful.
  */
-int dmp_get_enabled_features(unsigned short *mask)
+int dmp_get_enabled_features(uint16_t *mask)
 {
     mask[0] = dmp.feature_mask;
     return 0;
@@ -1259,8 +1259,8 @@ int dmp_set_interrupt_mode(uint8_t mode)
  *  @param[out] more        Number of remaining packets.
  *  @return     0 if successful.
  */
-int dmp_read_fifo(short *gyro, short *accel, long *quat,
-                  unsigned long *timestamp, short *sensors, uint8_t *more)
+int dmp_read_fifo(int16_t *gyro, int16_t *accel, int32_t *quat,
+                  uint32_t *timestamp, int16_t *sensors, uint8_t *more)
 {
     uint8_t fifo_data[MAX_PACKET_LENGTH];
     uint8_t ii = 0;
@@ -1278,16 +1278,16 @@ int dmp_read_fifo(short *gyro, short *accel, long *quat,
     if (dmp.feature_mask & (DMP_FEATURE_LP_QUAT | DMP_FEATURE_6X_LP_QUAT))
     {
 #ifdef FIFO_CORRUPTION_CHECK
-        long quat_q14[4], quat_mag_sq;
+        int32_t quat_q14[4], quat_mag_sq;
 #endif
-        quat[0] = ((long)fifo_data[0] << 24) | ((long)fifo_data[1] << 16) |
-                  ((long)fifo_data[2] << 8) | fifo_data[3];
-        quat[1] = ((long)fifo_data[4] << 24) | ((long)fifo_data[5] << 16) |
-                  ((long)fifo_data[6] << 8) | fifo_data[7];
-        quat[2] = ((long)fifo_data[8] << 24) | ((long)fifo_data[9] << 16) |
-                  ((long)fifo_data[10] << 8) | fifo_data[11];
-        quat[3] = ((long)fifo_data[12] << 24) | ((long)fifo_data[13] << 16) |
-                  ((long)fifo_data[14] << 8) | fifo_data[15];
+        quat[0] = ((int32_t)fifo_data[0] << 24) | ((int32_t)fifo_data[1] << 16) |
+                  ((int32_t)fifo_data[2] << 8) | fifo_data[3];
+        quat[1] = ((int32_t)fifo_data[4] << 24) | ((int32_t)fifo_data[5] << 16) |
+                  ((int32_t)fifo_data[6] << 8) | fifo_data[7];
+        quat[2] = ((int32_t)fifo_data[8] << 24) | ((int32_t)fifo_data[9] << 16) |
+                  ((int32_t)fifo_data[10] << 8) | fifo_data[11];
+        quat[3] = ((int32_t)fifo_data[12] << 24) | ((int32_t)fifo_data[13] << 16) |
+                  ((int32_t)fifo_data[14] << 8) | fifo_data[15];
         ii += 16;
 #ifdef FIFO_CORRUPTION_CHECK
         /* We can detect a corrupted FIFO by monitoring the quaternion data and
@@ -1295,7 +1295,7 @@ int dmp_read_fifo(short *gyro, short *accel, long *quat,
          * shouldn't happen in normal operation, but if an I2C error occurs,
          * the FIFO reads might become misaligned.
          *
-         * Let's start by scaling down the quaternion data to avoid long long
+         * Let's start by scaling down the quaternion data to avoid int64_t
          * math.
          */
         quat_q14[0] = quat[0] >> 16;
@@ -1318,18 +1318,18 @@ int dmp_read_fifo(short *gyro, short *accel, long *quat,
 
     if (dmp.feature_mask & DMP_FEATURE_SEND_RAW_ACCEL)
     {
-        accel[0] = ((short)fifo_data[ii + 0] << 8) | fifo_data[ii + 1];
-        accel[1] = ((short)fifo_data[ii + 2] << 8) | fifo_data[ii + 3];
-        accel[2] = ((short)fifo_data[ii + 4] << 8) | fifo_data[ii + 5];
+        accel[0] = ((int16_t)fifo_data[ii + 0] << 8) | fifo_data[ii + 1];
+        accel[1] = ((int16_t)fifo_data[ii + 2] << 8) | fifo_data[ii + 3];
+        accel[2] = ((int16_t)fifo_data[ii + 4] << 8) | fifo_data[ii + 5];
         ii += 6;
         sensors[0] |= INV_XYZ_ACCEL;
     }
 
     if (dmp.feature_mask & DMP_FEATURE_SEND_ANY_GYRO)
     {
-        gyro[0] = ((short)fifo_data[ii + 0] << 8) | fifo_data[ii + 1];
-        gyro[1] = ((short)fifo_data[ii + 2] << 8) | fifo_data[ii + 3];
-        gyro[2] = ((short)fifo_data[ii + 4] << 8) | fifo_data[ii + 5];
+        gyro[0] = ((int16_t)fifo_data[ii + 0] << 8) | fifo_data[ii + 1];
+        gyro[1] = ((int16_t)fifo_data[ii + 2] << 8) | fifo_data[ii + 3];
+        gyro[2] = ((int16_t)fifo_data[ii + 4] << 8) | fifo_data[ii + 5];
         ii += 6;
         sensors[0] |= INV_XYZ_GYRO;
     }

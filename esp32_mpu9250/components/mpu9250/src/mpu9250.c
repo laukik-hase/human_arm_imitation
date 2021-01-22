@@ -7,75 +7,41 @@
 
 static const char *TAG_MPU = "mpu_9250";
 
-static uint8_t mpu9250_orientation;
-static uint8_t tap_count;
-static uint8_t tap_direction;
-static bool _tap_available;
+static uint32_t time;
 
-static void orient_cb(uint8_t orient);
-static void tap_cb(uint8_t direction, uint8_t count);
+///////////////////////////////////////////////////////////////////////////////
+// Misc utiltiy functions
 
-static float ax, ay, az;
-static float gx, gy, gz;
-static float mx, my, mz;
-static long qw, qx, qy, qz;
-static long temperature;
-static unsigned long time;
-static float pitch, roll, yaw;
-
-static float mag_bias[3] = {-293.33f, -1780.0f, 1426.67f}, mag_scale[3] = {1.25f, 0.94f, 0.87f};
-static float mag_calib[3] = {297, 299, 287};
-/*
-Bias: X: -293.333313, Y: -1779.999878, Z: 1426.666626
-Scale: X: 1.258065, Y: 0.942598, Z: 0.873950
-*/
-static unsigned short _aSense;
-static float _gSense, _mSense;
-
-const signed char defaultOrientation[9] = {
-    1, 0, 0,
-    0, 1, 0,
-    0, 0, 1};
-
-void print_mpu_raw_agm(void)
+void printMPUInfo(mpu_data_t *mpu)
 {
-    ESP_LOGI(TAG_MPU, "Ax: %f Ay: %f Az: %f | Gx: %f Gy: %f Gz: %f | Mx: %f My: %f Mz: %f",
-             ax, ay, az, gx, gy, gz, mx, my, mz);
+    ESP_LOGD(TAG_MPU, "Acce FSR => ±%d g | Gyro FSR => %d dps | Compass FSR => ±%d uT",
+             getAccelFSR(), getGyroFSR(), getMagFSR());
+    ESP_LOGD(TAG_MPU, "Acce & Gyro Rate => %d Hz | Compass Rate => %d Hz",
+             getSampleRate(), getCompassSampleRate());
+
+    ESP_LOGD(TAG_MPU, "Acce Bias => X: %0.3f | Y: %0.3f | Z: %0.3f",
+             mpu->acce_bias[X_AXIS], mpu->acce_bias[Y_AXIS], mpu->acce_bias[Z_AXIS]);
+    ESP_LOGD(TAG_MPU, "Gyro Bias => X: %0.3f | Y: %0.3f | Z: %0.3f",
+             mpu->gyro_bias[X_AXIS], mpu->gyro_bias[Y_AXIS], mpu->gyro_bias[Z_AXIS]);
+
+    ESP_LOGD(TAG_MPU, "Compass Bias => X: %0.3f | Y: %0.3f | Z: %0.3f",
+             mpu->mag_bias[X_AXIS], mpu->mag_bias[Y_AXIS], mpu->mag_bias[Z_AXIS]);
+    ESP_LOGD(TAG_MPU, "Compass Scale => X: %0.3f | Y: %0.3f | Z: %0.3f",
+             mpu->mag_scale[X_AXIS], mpu->mag_scale[Y_AXIS], mpu->mag_scale[Z_AXIS]);
 }
 
-void print_mpu_raw_quat(void)
+float qToFloat(int32_t number, uint8_t q)
 {
-    ESP_LOGI(TAG_MPU, "Qw: %0.3f Qx: %0.3f Qy: %0.3f Qz: %0.3f",
-             calcQuat(qw), calcQuat(qx), calcQuat(qy), calcQuat(qz));
+    return (float)((double)number / (double)((int32_t)1 << q));
 }
 
-void mpu_set_sensitivity(void)
+int32_t floatToQ(float number, uint8_t q)
 {
-    _mSense = 0.15f; // Constant - 4915 / 32760
-    _aSense = 0.0f;  // Updated after accel FSR is set
-    _gSense = 0.0f;  // Updated after gyro FSR is set
+    return (int32_t)(number * ((int32_t)1 << q));
 }
 
-inv_error_t begin(void)
-{
-    inv_error_t result;
-    struct int_param_s int_param;
-
-    mpu_set_sensitivity();
-    result = mpu_init(&int_param);
-
-    if (result)
-        return result;
-
-    mpu_set_bypass(1); // Place all slaves (including compass) on primary bus
-
-    setSensors(INV_XYZ_GYRO | INV_XYZ_ACCEL | INV_XYZ_COMPASS);
-
-    _gSense = getGyroSens();
-    _aSense = getAccelSens();
-
-    return result;
-}
+///////////////////////////////////////////////////////////////////////////////
+// Interrupt Settings
 
 inv_error_t enableInterrupt(uint8_t enable)
 {
@@ -92,9 +58,9 @@ inv_error_t setIntLatched(uint8_t enable)
     return mpu_set_int_latched(enable);
 }
 
-short getIntStatus(void)
+int16_t getIntStatus(void)
 {
-    short status;
+    int16_t status;
     if (mpu_get_int_status(&status) == INV_SUCCESS)
     {
         return status;
@@ -102,145 +68,208 @@ short getIntStatus(void)
     return 0;
 }
 
-// Accelerometer Low-Power Mode. Rate options:
-// 1.25 (1), 2.5 (2), 5, 10, 20, 40,
-// 80, 160, 320, or 640 Hz
-// Disables compass and gyro
-inv_error_t lowPowerAccel(unsigned short rate)
+///////////////////////////////////////////////////////////////////////////////
+// Sensor Settings - FSR, Sample Rate, LPF, Senstivity
+
+inv_error_t setGyroFSR(uint16_t fsr)
 {
-    return mpu_lp_accel_mode(rate);
+    return mpu_set_gyro_fsr(fsr);
 }
 
-inv_error_t setGyroFSR(unsigned short fsr)
+uint16_t getGyroFSR(void)
 {
-    inv_error_t err;
-    err = mpu_set_gyro_fsr(fsr);
-    if (err == INV_SUCCESS)
-    {
-        _gSense = getGyroSens();
-    }
-    return err;
+    uint16_t tmp;
+    if (mpu_get_gyro_fsr(&tmp) == INV_SUCCESS)
+        return tmp;
+    
+    return 0;
 }
 
 inv_error_t setAccelFSR(uint8_t fsr)
 {
-    inv_error_t err;
-    err = mpu_set_accel_fsr(fsr);
-    if (err == INV_SUCCESS)
-    {
-        _aSense = getAccelSens();
-    }
-    return err;
-}
-
-unsigned short getGyroFSR(void)
-{
-    unsigned short tmp;
-    if (mpu_get_gyro_fsr(&tmp) == INV_SUCCESS)
-    {
-        return tmp;
-    }
-    return 0;
+    return mpu_set_accel_fsr(fsr);
 }
 
 uint8_t getAccelFSR(void)
 {
     uint8_t tmp;
     if (mpu_get_accel_fsr(&tmp) == INV_SUCCESS)
-    {
         return tmp;
-    }
+
     return 0;
 }
 
-unsigned short getMagFSR(void)
+uint16_t getMagFSR(void)
 {
-    unsigned short tmp;
+    uint16_t tmp;
     if (mpu_get_compass_fsr(&tmp) == INV_SUCCESS)
-    {
         return tmp;
-    }
+
     return 0;
 }
 
-inv_error_t setLPF(unsigned short lpf)
+inv_error_t setLPF(uint16_t lpf)
 {
     return mpu_set_lpf(lpf);
 }
 
-unsigned short getLPF(void)
+uint16_t getLPF(void)
 {
-    unsigned short tmp;
+    uint16_t tmp;
     if (mpu_get_lpf(&tmp) == INV_SUCCESS)
-    {
         return tmp;
-    }
+    
     return 0;
 }
 
-inv_error_t setSampleRate(unsigned short rate)
+inv_error_t setSampleRate(uint16_t rate)
 {
     return mpu_set_sample_rate(rate);
 }
 
-unsigned short getSampleRate(void)
+uint16_t getSampleRate(void)
 {
-    unsigned short tmp;
+    uint16_t tmp;
     if (mpu_get_sample_rate(&tmp) == INV_SUCCESS)
-    {
         return tmp;
-    }
+    
     return 0;
 }
 
-inv_error_t setCompassSampleRate(unsigned short rate)
+inv_error_t setCompassSampleRate(uint16_t rate)
 {
     return mpu_set_compass_sample_rate(rate);
 }
 
-unsigned short getCompassSampleRate(void)
+uint16_t getCompassSampleRate(void)
 {
-    unsigned short tmp;
+    uint16_t tmp;
     if (mpu_get_compass_sample_rate(&tmp) == INV_SUCCESS)
-    {
         return tmp;
-    }
 
     return 0;
+}
+
+inv_error_t setMPUSensitivity(mpu_data_t *mpu)
+{
+    mpu->m_sens = COMPASS_SENSITIVITY; // Constant - 32760 / 4915
+    mpu->a_sens = getAccelSens();      // Updated after accel FSR is set
+    mpu->g_sens = getGyroSens();       // Updated after gyro FSR is set
+
+    return INV_SUCCESS;
 }
 
 float getGyroSens(void)
 {
     float sens;
     if (mpu_get_gyro_sens(&sens) == INV_SUCCESS)
-    {
         return sens;
-    }
+    
     return 0;
 }
 
-unsigned short getAccelSens(void)
+float getAccelSens(void)
 {
-    unsigned short sens;
+    uint16_t sens;
     if (mpu_get_accel_sens(&sens) == INV_SUCCESS)
-    {
-        return sens;
-    }
+        return (float)sens;
+    
     return 0;
 }
 
 float getMagSens(void)
 {
-    return 0.15; // Static, 4915/32760
+    return 6.665f;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// Sensor Settings - Self-tests and Calibration
+
+inv_error_t mpuSelfTest(mpu_data_t *mpu)
+{
+    int32_t gyro[3], accel[3];
+    int8_t res = mpu_run_6500_self_test(gyro, accel, false);
+
+    // NOTE: Acce and Gyro self-test failures are fatal. Stabilize the device and try again.
+    // Compass self-test result can be ignored; calibration takes care of it.
+
+    if (!(res & GYRO_SELF_TEST))
+        ESP_LOGE(TAG_MPU, "Gyro Self Test Failed!");
+    if (!(res & ACCEL_SELF_TEST))
+        ESP_LOGE(TAG_MPU, "Acce Self Test Failed!");
+    if (!(res & COMPASS_SELF_TEST))
+        ESP_LOGW(TAG_MPU, "Compass Self Test Failed!");
+
+    mpu->gyro_bias[X_AXIS] = qToFloat(gyro[X_AXIS], BIAS_Q_FORMAT_N);
+    mpu->gyro_bias[Y_AXIS] = qToFloat(gyro[Y_AXIS], BIAS_Q_FORMAT_N);
+    mpu->gyro_bias[Z_AXIS] = qToFloat(gyro[Z_AXIS], BIAS_Q_FORMAT_N);
+
+    mpu->acce_bias[X_AXIS] = qToFloat(accel[X_AXIS], BIAS_Q_FORMAT_N);
+    mpu->acce_bias[Y_AXIS] = qToFloat(accel[Y_AXIS], BIAS_Q_FORMAT_N);
+    mpu->acce_bias[Z_AXIS] = qToFloat(accel[Z_AXIS], BIAS_Q_FORMAT_N);
+
+    return INV_SUCCESS;
+}
+
+inv_error_t compassCalibration(mpu_data_t *mpu)
+{
+    float mag_max[3] = {-32767, -32767, -32767}, mag_min[3] = {32767, 32767, 32767}, mag_temp[3] = {0, 0, 0};
+
+    ESP_LOGI(TAG_MPU, "Wave device in a figure eight until done!");
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+    int sample_count = 1536;
+    int16_t data[3];
+
+    for (int i = 0; i < sample_count; i++)
+    {
+        mpu_get_compass_reg(data, &time);
+
+        mag_temp[X_AXIS] = (float)data[X_AXIS] / mpu->m_sens;
+        mag_temp[Y_AXIS] = (float)data[Y_AXIS] / mpu->m_sens;
+        mag_temp[Z_AXIS] = (float)data[Z_AXIS] / mpu->m_sens;
+
+        for (int j = X_AXIS; j <= Z_AXIS; j++)
+        {
+            if (mag_temp[j] > mag_max[j])
+                mag_max[j] = mag_temp[j];
+            if (mag_temp[j] < mag_min[j])
+                mag_min[j] = mag_temp[j];
+        }
+
+        // at 100 Hz ODR, new mag data is available every 10 ms
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
+
+    // Get hard iron correction
+    mpu->mag_bias[X_AXIS] = (mag_max[X_AXIS] + mag_min[X_AXIS]) / 2.0f; // get bias in x axis
+    mpu->mag_bias[Y_AXIS] = (mag_max[Y_AXIS] + mag_min[Y_AXIS]) / 2.0f; // get bias in y axis
+    mpu->mag_bias[Z_AXIS] = (mag_max[Z_AXIS] + mag_min[Z_AXIS]) / 2.0f; // get bias in z axis
+
+    // Get soft iron correction estimate
+    mpu->mag_scale[X_AXIS] = (mag_max[X_AXIS] - mag_min[X_AXIS]) / 2.0f; // get average x axis max chord length in counts
+    mpu->mag_scale[Y_AXIS] = (mag_max[Y_AXIS] - mag_min[Y_AXIS]) / 2.0f; // get average y axis max chord length in counts
+    mpu->mag_scale[Z_AXIS] = (mag_max[Z_AXIS] - mag_min[Z_AXIS]) / 2.0f; // get average z axis max chord length in counts
+
+    float avg_rad = (mpu->mag_scale[X_AXIS] + mpu->mag_scale[Y_AXIS] + mpu->mag_scale[Z_AXIS]) / 3.0;
+
+    mpu->mag_scale[X_AXIS] = avg_rad / mpu->mag_scale[X_AXIS]; // mag scales in Gauss
+    mpu->mag_scale[Y_AXIS] = avg_rad / mpu->mag_scale[Y_AXIS];
+    mpu->mag_scale[Z_AXIS] = avg_rad / mpu->mag_scale[Z_AXIS];
+
+    ESP_LOGI(TAG_MPU, "Magnetometer Calibration Done!");
+    return INV_SUCCESS;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// FIFO Configuration
 
 uint8_t getFifoConfig(void)
 {
     uint8_t sensors;
     if (mpu_get_fifo_config(&sensors) == INV_SUCCESS)
-    {
         return sensors;
-    }
+    
     return 0;
 }
 
@@ -254,7 +283,7 @@ inv_error_t resetFifo(void)
     return mpu_reset_fifo();
 }
 
-unsigned short fifoAvailable(void)
+uint16_t fifoAvailable(void)
 {
     uint8_t fifoH, fifoL;
 
@@ -266,10 +295,10 @@ unsigned short fifoAvailable(void)
     return (fifoH << 8) | fifoL;
 }
 
-inv_error_t updateFifo(void)
+inv_error_t updateFifo(mpu_data_t *mpu)
 {
-    short gyro[3], accel[3];
-    unsigned long timestamp;
+    int16_t gyro[3], accel[3];
+    uint32_t timestamp;
     uint8_t sensors, more;
 
     if (mpu_read_fifo(gyro, accel, &timestamp, &sensors, &more) != INV_SUCCESS)
@@ -277,21 +306,24 @@ inv_error_t updateFifo(void)
 
     if (sensors & INV_XYZ_ACCEL)
     {
-        ax = accel[X_AXIS];
-        ay = accel[Y_AXIS];
-        az = accel[Z_AXIS];
+        mpu->acce_raw[X_AXIS] = (float)accel[X_AXIS];
+        mpu->acce_raw[Y_AXIS] = (float)accel[Y_AXIS];
+        mpu->acce_raw[Z_AXIS] = (float)accel[Z_AXIS];
     }
     if (sensors & INV_X_GYRO)
-        gx = gyro[X_AXIS];
+        mpu->gyro_raw[X_AXIS] = (float)gyro[X_AXIS];
     if (sensors & INV_Y_GYRO)
-        gy = gyro[Y_AXIS];
+        mpu->gyro_raw[Y_AXIS] = (float)gyro[Y_AXIS];
     if (sensors & INV_Z_GYRO)
-        gz = gyro[Z_AXIS];
+        mpu->gyro_raw[Z_AXIS] = (float)gyro[Z_AXIS];
 
     time = timestamp;
 
     return INV_SUCCESS;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// Sensor raw values - Set the sensor config, data ready check and update
 
 inv_error_t setSensors(uint8_t sensors)
 {
@@ -309,86 +341,71 @@ bool dataReady()
     return false;
 }
 
-inv_error_t update(uint8_t sensors)
+inv_error_t update(uint8_t sensors, mpu_data_t *mpu)
 {
     inv_error_t aErr = INV_SUCCESS;
     inv_error_t gErr = INV_SUCCESS;
     inv_error_t mErr = INV_SUCCESS;
-    inv_error_t tErr = INV_SUCCESS;
 
     if (sensors & UPDATE_ACCEL)
-        aErr = updateAccel();
+        aErr = updateAccel(mpu);
     if (sensors & UPDATE_GYRO)
-        gErr = updateGyro();
+        gErr = updateGyro(mpu);
     if (sensors & UPDATE_COMPASS)
-        mErr = updateCompass();
-    if (sensors & UPDATE_TEMP)
-        tErr = updateTemperature();
+        mErr = updateCompass(mpu);
 
-    return aErr | gErr | mErr | tErr;
+    return aErr | gErr | mErr;
 }
 
-int updateAccel(void)
+inv_error_t updateAccel(mpu_data_t *mpu)
 {
-    short data[3];
+    int16_t data[3];
 
     if (mpu_get_accel_reg(data, &time))
-    {
         return INV_ERROR;
-    }
-    ax = (float)data[X_AXIS] / (float)_aSense;
-    ay = (float)data[Y_AXIS] / (float)_aSense;
-    az = (float)data[Z_AXIS] / (float)_aSense;
+
+    mpu->acce_raw[X_AXIS] = data[X_AXIS] / mpu->a_sens - mpu->acce_bias[X_AXIS];
+    mpu->acce_raw[Y_AXIS] = data[Y_AXIS] / mpu->a_sens - mpu->acce_bias[Y_AXIS];
+    mpu->acce_raw[Z_AXIS] = data[Z_AXIS] / mpu->a_sens - mpu->acce_bias[Z_AXIS];
 
     return INV_SUCCESS;
 }
 
-int updateGyro(void)
+inv_error_t updateGyro(mpu_data_t *mpu)
 {
-    short data[3];
+    int16_t data[3];
 
     if (mpu_get_gyro_reg(data, &time))
-    {
         return INV_ERROR;
-    }
-    gx = (float)data[X_AXIS] / (float)_gSense;
-    gy = (float)data[Y_AXIS] / (float)_gSense;
-    gz = (float)data[Z_AXIS] / (float)_gSense;
+
+    mpu->gyro_raw[X_AXIS] = data[X_AXIS] / mpu->g_sens - mpu->gyro_bias[X_AXIS];
+    mpu->gyro_raw[Y_AXIS] = data[Y_AXIS] / mpu->g_sens - mpu->gyro_bias[Y_AXIS];
+    mpu->gyro_raw[Z_AXIS] = data[Z_AXIS] / mpu->g_sens - mpu->gyro_bias[Z_AXIS];
 
     return INV_SUCCESS;
 }
 
-int updateCompass(void)
+inv_error_t updateCompass(mpu_data_t *mpu)
 {
-    short data[3];
+    int16_t data[3];
 
     if (mpu_get_compass_reg(data, &time))
-    {
         return INV_ERROR;
-    }
 
-    mx = ((float)data[X_AXIS] / _mSense - mag_bias[X_AXIS]) * mag_scale[X_AXIS];
-    my = ((float)data[Y_AXIS] / _mSense - mag_bias[Y_AXIS]) * mag_scale[Y_AXIS];
-    mz = ((float)data[Z_AXIS] / _mSense - mag_bias[Z_AXIS]) * mag_scale[Z_AXIS];
+    mpu->mag_raw[X_AXIS] = ((data[X_AXIS] / mpu->m_sens) - mpu->mag_bias[X_AXIS]) * mpu->mag_scale[X_AXIS];
+    mpu->mag_raw[Y_AXIS] = ((data[Y_AXIS] / mpu->m_sens) - mpu->mag_bias[Y_AXIS]) * mpu->mag_scale[Y_AXIS];
+    mpu->mag_raw[Z_AXIS] = ((data[Z_AXIS] / mpu->m_sens) - mpu->mag_bias[Z_AXIS]) * mpu->mag_scale[Z_AXIS];
 
     return INV_SUCCESS;
 }
 
-inv_error_t updateTemperature(void)
-{
-    return mpu_get_temperature(&temperature, &time);
-}
+///////////////////////////////////////////////////////////////////////////////
+// DMP Configuration
 
-int selfTest(uint8_t debug)
+inv_error_t dmpBegin(uint16_t features, uint16_t fifoRate)
 {
-    long gyro[3], accel[3];
-    return mpu_run_self_test(gyro, accel);
-}
-
-inv_error_t dmpBegin(unsigned short features, unsigned short fifoRate)
-{
-    unsigned short feat = features;
-    unsigned short rate = fifoRate;
+    uint16_t feat = features;
+    uint16_t rate = fifoRate;
 
     if (dmpLoad() != INV_SUCCESS)
         return INV_ERROR;
@@ -413,9 +430,6 @@ inv_error_t dmpBegin(unsigned short features, unsigned short fifoRate)
     if (dmpSetFifoRate(rate) != INV_SUCCESS)
         return INV_ERROR;
 
-    if (dmpSetOrientation(defaultOrientation) != INV_SUCCESS)
-        return INV_ERROR;
-
     return mpu_set_dmp_state(1);
 }
 
@@ -424,64 +438,64 @@ inv_error_t dmpLoad(void)
     return dmp_load_motion_driver_firmware();
 }
 
-unsigned short dmpGetFifoRate(void)
+uint16_t dmpGetFifoRate(void)
 {
-    unsigned short rate;
+    uint16_t rate;
     if (dmp_get_fifo_rate(&rate) == INV_SUCCESS)
         return rate;
 
     return 0;
 }
 
-inv_error_t dmpSetFifoRate(unsigned short rate)
+inv_error_t dmpSetFifoRate(uint16_t rate)
 {
     if (rate > MAX_DMP_SAMPLE_RATE)
         rate = MAX_DMP_SAMPLE_RATE;
     return dmp_set_fifo_rate(rate);
 }
 
-inv_error_t dmpUpdateFifo(void)
+inv_error_t dmpUpdateFifo(mpu_data_t *mpu)
 {
-    short gyro[3];
-    short accel[3];
-    long quat[4];
-    unsigned long timestamp;
-    short sensors;
+    int16_t gyro[3];
+    int16_t accel[3];
+    int32_t quat[4];
+    uint32_t timestamp;
+    int16_t sensors;
     uint8_t more;
 
     if (dmp_read_fifo(gyro, accel, quat, &timestamp, &sensors, &more) != INV_SUCCESS)
     {
         return INV_ERROR;
     }
-
+    // TODO: Add sensitivity parameters here
     if (sensors & INV_XYZ_ACCEL)
     {
-        ax = (float)accel[X_AXIS];
-        ay = (float)accel[Y_AXIS];
-        az = (float)accel[Z_AXIS];
+        mpu->acce_raw[X_AXIS] = (float)accel[X_AXIS];
+        mpu->acce_raw[Y_AXIS] = (float)accel[Y_AXIS];
+        mpu->acce_raw[Z_AXIS] = (float)accel[Z_AXIS];
     }
     if (sensors & INV_X_GYRO)
-        gx = (float)gyro[X_AXIS];
+        mpu->gyro_raw[X_AXIS] = (float)gyro[X_AXIS];
     if (sensors & INV_Y_GYRO)
-        gy = (float)gyro[Y_AXIS];
+        mpu->gyro_raw[Y_AXIS] = (float)gyro[Y_AXIS];
     if (sensors & INV_Z_GYRO)
-        gz = (float)gyro[Z_AXIS];
+        mpu->gyro_raw[Z_AXIS] = (float)gyro[Z_AXIS];
+
     if (sensors & INV_WXYZ_QUAT)
     {
-        qw = quat[0];
-        qx = quat[1];
-        qy = quat[2];
-        qz = quat[3];
+        mpu->qw = qToFloat(quat[0], QUATERNION_Q_FORMAT_N);
+        mpu->qx = qToFloat(quat[1], QUATERNION_Q_FORMAT_N);
+        mpu->qy = qToFloat(quat[2], QUATERNION_Q_FORMAT_N);
+        mpu->qz = qToFloat(quat[3], QUATERNION_Q_FORMAT_N);
     }
 
     time = timestamp;
-
     return INV_SUCCESS;
 }
 
-inv_error_t dmpEnableFeatures(unsigned short mask)
+inv_error_t dmpEnableFeatures(uint16_t mask)
 {
-    unsigned short enMask = 0;
+    uint16_t enMask = 0;
     enMask |= mask;
     // Combat known issue where fifo sample rate is incorrect
     // unless tap is enabled in the DMP.
@@ -489,325 +503,289 @@ inv_error_t dmpEnableFeatures(unsigned short mask)
     return dmp_enable_feature(enMask);
 }
 
-unsigned short dmpGetEnabledFeatures(void)
+uint16_t dmpGetEnabledFeatures(void)
 {
-    unsigned short mask;
+    uint16_t mask;
     if (dmp_get_enabled_features(&mask) == INV_SUCCESS)
         return mask;
     return 0;
 }
 
-inv_error_t dmpSetTap(unsigned short xThresh, unsigned short yThresh, unsigned short zThresh, uint8_t taps, unsigned short tapTime, unsigned short tapMulti)
+///////////////////////////////////////////////////////////////////////////////
+// Madgwick Filter - Initialization, Quaternion Update, Euler Angle conversion
+
+inv_error_t initMadgwickFilter(mpu_data_t *mpu)
 {
-
-    uint8_t axes = 0;
-    if (xThresh > 0)
-    {
-        axes |= TAP_X;
-        xThresh = constrain(xThresh, 1, 1600);
-        if (dmp_set_tap_thresh(1 << X_AXIS, xThresh) != INV_SUCCESS)
-            return INV_ERROR;
-    }
-    if (yThresh > 0)
-    {
-        axes |= TAP_Y;
-        yThresh = constrain(yThresh, 1, 1600);
-        if (dmp_set_tap_thresh(1 << Y_AXIS, yThresh) != INV_SUCCESS)
-            return INV_ERROR;
-    }
-    if (zThresh > 0)
-    {
-        axes |= TAP_Z;
-        zThresh = constrain(zThresh, 1, 1600);
-        if (dmp_set_tap_thresh(1 << Z_AXIS, zThresh) != INV_SUCCESS)
-            return INV_ERROR;
-    }
-    if (dmp_set_tap_axes(axes) != INV_SUCCESS)
-        return INV_ERROR;
-    if (dmp_set_tap_count(taps) != INV_SUCCESS)
-        return INV_ERROR;
-    if (dmp_set_tap_time(tapTime) != INV_SUCCESS)
-        return INV_ERROR;
-    if (dmp_set_tap_time_multi(tapMulti) != INV_SUCCESS)
-        return INV_ERROR;
-
-    dmp_register_tap_cb(tap_cb);
+    CHECK(update(UPDATE_ACCEL | UPDATE_GYRO | UPDATE_COMPASS, mpu));
+    mpu->timer = esp_timer_get_time();
 
     return INV_SUCCESS;
 }
 
-uint8_t getTapDir(void)
+void computeEulerAngles(mpu_data_t *mpu, bool degrees)
 {
-    _tap_available = false;
-    return tap_direction;
-}
+    float qw = mpu->qw;
+    float qx = mpu->qx;
+    float qy = mpu->qy;
+    float qz = mpu->qz;
 
-uint8_t getTapCount(void)
-{
-    _tap_available = false;
-    return tap_count;
-}
+    double qw2 = qw * qw;
+    double qx2 = qx * qx;
+    double qy2 = qy * qy;
+    double qz2 = qz * qz;
 
-bool tapAvailable(void)
-{
-    return _tap_available;
-}
+    // NOTE: From kriswiner's MPU-9250
+    float a12 = 2.0f * (qx * qy + qw * qz);
+    float a22 = qw2 + qx2 - qy2 - qz2;
+    float a31 = 2.0f * (qw * qx + qy * qz);
+    float a32 = 2.0f * (qx * qz - qw * qy);
+    float a33 = qw2 - qx2 - qy2 + qz2;
 
-inv_error_t dmpSetOrientation(const signed char *orientationMatrix)
-{
-    unsigned short scalar;
-    scalar = orientation_row_2_scale(orientationMatrix);
-    scalar |= orientation_row_2_scale(orientationMatrix + 3) << 3;
-    scalar |= orientation_row_2_scale(orientationMatrix + 6) << 6;
+    // NOTE: From Wikipedia
+    // float a12 = 2.0f * (qx * qy + qw * qz);
+    // float a22 = 1.0f - 2.0f * (qx2 + qy2);
+    // float a31 = 2.0f * (qw * qx + qy * qz);
+    // float a32 = 2.0f * (qx * qz - qw * qy);
+    // float a33 = 1.0f - 2.0f * (qy2 + qz2);
 
-    dmp_register_android_orient_cb(orient_cb);
-
-    return dmp_set_orientation(scalar);
-}
-
-uint8_t dmpGetOrientation(void)
-{
-    return mpu9250_orientation;
-}
-
-inv_error_t dmpEnable3Quat(void)
-{
-    unsigned short dmpFeatures;
-
-    // 3-axis and 6-axis quat are mutually exclusive
-    dmpFeatures = dmpGetEnabledFeatures();
-    dmpFeatures &= ~(DMP_FEATURE_6X_LP_QUAT);
-    dmpFeatures |= DMP_FEATURE_LP_QUAT;
-
-    if (dmpEnableFeatures(dmpFeatures) != INV_SUCCESS)
-        return INV_ERROR;
-
-    return dmp_enable_lp_quat(1);
-}
-
-unsigned long dmpGetPedometerSteps(void)
-{
-    unsigned long steps;
-    if (dmp_get_pedometer_step_count(&steps) == INV_SUCCESS)
-    {
-        return steps;
-    }
-    return 0;
-}
-
-inv_error_t dmpSetPedometerSteps(unsigned long steps)
-{
-    return dmp_set_pedometer_step_count(steps);
-}
-
-unsigned long dmpGetPedometerTime(void)
-{
-    unsigned long walkTime;
-    if (dmp_get_pedometer_walk_time(&walkTime) == INV_SUCCESS)
-    {
-        return walkTime;
-    }
-    return 0;
-}
-
-inv_error_t dmpSetPedometerTime(unsigned long time)
-{
-    return dmp_set_pedometer_walk_time(time);
-}
-
-float calcQuat(long axis)
-{
-    return qToFloat(axis, 30);
-}
-
-float qToFloat(long number, uint8_t q)
-{
-    unsigned long mask = 0;
-    for (int i = 0; i < q; i++)
-    {
-        mask |= (1 << i);
-    }
-    return (number >> q) + ((number & mask) / (float)(2 << (q - 1)));
-}
-
-void computeEulerAngles(bool degrees)
-{
-    float dqw = qToFloat(qw, 30);
-    float dqx = qToFloat(qx, 30);
-    float dqy = qToFloat(qy, 30);
-    float dqz = qToFloat(qz, 30);
-
-    double ysqr = dqy * dqy;
-
-    // Roll (x-axis rotation)
-    double t0 = +2.0 * (dqw * dqx + dqy * dqz);
-    double t1 = +1.0 - 2.0 * (dqx * dqx + ysqr);
-    roll = atan2(t0, t1);
-
-    // Pitch (y-axis rotation)
-    double t2 = +2.0 * (dqw * dqy - dqz * dqx);
-    t2 = t2 > 1.0 ? 1.0 : t2;
-    t2 = t2 < -1.0 ? -1.0 : t2;
-    pitch = asin(t2);
-
-    // Yaw (z-axis rotation)
-    double t3 = +2.0 * (dqw * dqz + dqx * dqy);
-    double t4 = +1.0 - 2.0 * (ysqr + dqz * dqz);
-    yaw = atan2(t3, t4);
+    mpu->pitch = -asinf(a32);
+    mpu->roll = atan2f(a31, a33);
+    mpu->yaw = atan2f(a12, a22);
 
     if (degrees)
     {
-        pitch *= RAD_TO_DEG;
-        roll *= RAD_TO_DEG;
-        yaw *= RAD_TO_DEG;
+        mpu->pitch *= RAD_TO_DEG;
+        mpu->roll *= RAD_TO_DEG;
+        mpu->yaw *= RAD_TO_DEG;
+
+        mpu->yaw += 0.08f; // Declination at Kalyan, India
+        if (mpu->yaw < 0)
+            mpu->yaw += 360.0f; // Ensure yaw stays between 0 and 360
     }
-
-    ESP_LOGI(TAG_MPU, "Roll: %0.2f | Pitch: %0.2f | Yaw: %0.2f", roll, pitch, yaw);
 }
 
-unsigned short orientation_row_2_scale(const signed char *row)
+void MadgwickFilter(mpu_data_t *mpu)
 {
-    unsigned short b;
+    // Auxiliary variables to avoid repeated arithmetic
+    float norm;
+    float hx, hy, _2bx, _2bz;
+    float s1, s2, s3, s4;
+    float qDot1, qDot2, qDot3, qDot4;
 
-    if (row[0] > 0)
-        b = 0;
-    else if (row[0] < 0)
-        b = 4;
-    else if (row[1] > 0)
-        b = 1;
-    else if (row[1] < 0)
-        b = 5;
-    else if (row[2] > 0)
-        b = 2;
-    else if (row[2] < 0)
-        b = 6;
-    else
-        b = 7; // error
-    return b;
+    float _2q1mx, _2q1my, _2q1mz, _2q2mx;
+    float _4bx, _4bz;
+
+    if (dataReady())
+        update(UPDATE_ACCEL | UPDATE_GYRO | UPDATE_COMPASS, mpu);
+
+    float dt = (float)(esp_timer_get_time() - mpu->timer) / 1000000;
+    mpu->timer = esp_timer_get_time();
+
+/* NOTE: 
+    1) The x(y) axis of the accel/gyro is aligned with the y(x) axis of the magnetometer
+    2) The magnetometer z-axis (+down) is misaligned with z-axis (+up) of accelerometer and gyro
+    3) As gravity is by convention positive down, we need to invert the accel data
+    4) Thus, if we set North along the accel (+x), then we have East along the accel (-y) and Down along the accel (-z)
+    acce_raw: -ax, ay, az
+    gyro_raw: gx * DEG_TO_RAD, -gy * DEG_TO_RAD, -gz * DEG_TO_RAD (as rad/s)
+    mag_raw: my, -mx, mz
+*/
+    float ax = -1.0f * mpu->acce_raw[X_AXIS];
+    float ay = mpu->acce_raw[Y_AXIS];
+    float az = mpu->acce_raw[Z_AXIS];
+
+    float gx = mpu->gyro_raw[X_AXIS] * DEG_TO_RAD;
+    float gy = -1.0f * mpu->gyro_raw[Y_AXIS] * DEG_TO_RAD;
+    float gz = -1.0f * mpu->gyro_raw[Z_AXIS] * DEG_TO_RAD;
+
+    float mx = mpu->mag_raw[Y_AXIS];
+    float my = -1.0f * mpu->mag_raw[X_AXIS];
+    float mz = mpu->mag_raw[Z_AXIS];
+
+    float q1 = mpu->qw;
+    float q2 = mpu->qx;
+    float q3 = mpu->qy;
+    float q4 = mpu->qz;
+
+    float _2q1 = 2.0f * q1;
+    float _2q2 = 2.0f * q2;
+    float _2q3 = 2.0f * q3;
+    float _2q4 = 2.0f * q4;
+    float _2q1q3 = 2.0f * q1 * q3;
+    float _2q3q4 = 2.0f * q3 * q4;
+    float q1q1 = q1 * q1;
+    float q1q2 = q1 * q2;
+    float q1q3 = q1 * q3;
+    float q1q4 = q1 * q4;
+    float q2q2 = q2 * q2;
+    float q2q3 = q2 * q3;
+    float q2q4 = q2 * q4;
+    float q3q3 = q3 * q3;
+    float q3q4 = q3 * q4;
+    float q4q4 = q4 * q4;
+
+    // Normalise accelerometer measurement
+    norm = sqrtf(ax * ax + ay * ay + az * az);
+    if (norm == 0.0f)
+        return; // handle NaN
+    norm = 1.0f / norm;
+    ax *= norm;
+    ay *= norm;
+    az *= norm;
+
+    // Normalise magnetometer measurement
+    norm = sqrtf(mx * mx + my * my + mz * mz);
+    if (norm == 0.0f)
+        return; // handle NaN
+    norm = 1.0f / norm;
+    mx *= norm;
+    my *= norm;
+    mz *= norm;
+
+    // Reference direction of Earth's magnetic field
+    _2q1mx = 2.0f * q1 * mx;
+    _2q1my = 2.0f * q1 * my;
+    _2q1mz = 2.0f * q1 * mz;
+    _2q2mx = 2.0f * q2 * mx;
+    hx = mx * q1q1 - _2q1my * q4 + _2q1mz * q3 + mx * q2q2 + _2q2 * my * q3 + _2q2 * mz * q4 - mx * q3q3 - mx * q4q4;
+    hy = _2q1mx * q4 + my * q1q1 - _2q1mz * q2 + _2q2mx * q3 - my * q2q2 + my * q3q3 + _2q3 * mz * q4 - my * q4q4;
+    _2bx = sqrtf(hx * hx + hy * hy);
+    _2bz = -_2q1mx * q3 + _2q1my * q2 + mz * q1q1 + _2q2mx * q4 - mz * q2q2 + _2q3 * my * q4 - mz * q3q3 + mz * q4q4;
+    _4bx = 2.0f * _2bx;
+    _4bz = 2.0f * _2bz;
+
+    // Gradient decent algorithm corrective step
+    s1 = -_2q3 * (2.0f * q2q4 - _2q1q3 - ax) + _2q2 * (2.0f * q1q2 + _2q3q4 - ay) - _2bz * q3 * (_2bx * (0.5f - q3q3 - q4q4) + _2bz * (q2q4 - q1q3) - mx) + (-_2bx * q4 + _2bz * q2) * (_2bx * (q2q3 - q1q4) + _2bz * (q1q2 + q3q4) - my) + _2bx * q3 * (_2bx * (q1q3 + q2q4) + _2bz * (0.5f - q2q2 - q3q3) - mz);
+    s2 = _2q4 * (2.0f * q2q4 - _2q1q3 - ax) + _2q1 * (2.0f * q1q2 + _2q3q4 - ay) - 4.0f * q2 * (1.0f - 2.0f * q2q2 - 2.0f * q3q3 - az) + _2bz * q4 * (_2bx * (0.5f - q3q3 - q4q4) + _2bz * (q2q4 - q1q3) - mx) + (_2bx * q3 + _2bz * q1) * (_2bx * (q2q3 - q1q4) + _2bz * (q1q2 + q3q4) - my) + (_2bx * q4 - _4bz * q2) * (_2bx * (q1q3 + q2q4) + _2bz * (0.5f - q2q2 - q3q3) - mz);
+    s3 = -_2q1 * (2.0f * q2q4 - _2q1q3 - ax) + _2q4 * (2.0f * q1q2 + _2q3q4 - ay) - 4.0f * q3 * (1.0f - 2.0f * q2q2 - 2.0f * q3q3 - az) + (-_4bx * q3 - _2bz * q1) * (_2bx * (0.5f - q3q3 - q4q4) + _2bz * (q2q4 - q1q3) - mx) + (_2bx * q2 + _2bz * q4) * (_2bx * (q2q3 - q1q4) + _2bz * (q1q2 + q3q4) - my) + (_2bx * q1 - _4bz * q3) * (_2bx * (q1q3 + q2q4) + _2bz * (0.5f - q2q2 - q3q3) - mz);
+    s4 = _2q2 * (2.0f * q2q4 - _2q1q3 - ax) + _2q3 * (2.0f * q1q2 + _2q3q4 - ay) + (-_4bx * q4 + _2bz * q2) * (_2bx * (0.5f - q3q3 - q4q4) + _2bz * (q2q4 - q1q3) - mx) + (-_2bx * q1 + _2bz * q3) * (_2bx * (q2q3 - q1q4) + _2bz * (q1q2 + q3q4) - my) + _2bx * q2 * (_2bx * (q1q3 + q2q4) + _2bz * (0.5f - q2q2 - q3q3) - mz);
+    norm = sqrtf(s1 * s1 + s2 * s2 + s3 * s3 + s4 * s4); // normalise step magnitude
+    norm = 1.0f / norm;
+    s1 *= norm;
+    s2 *= norm;
+    s3 *= norm;
+    s4 *= norm;
+
+    // Compute rate of change of quaternion
+    qDot1 = 0.5f * (-q2 * gx - q3 * gy - q4 * gz) - BETA * s1;
+    qDot2 = 0.5f * (q1 * gx + q3 * gz - q4 * gy) - BETA * s2;
+    qDot3 = 0.5f * (q1 * gy - q2 * gz + q4 * gx) - BETA * s3;
+    qDot4 = 0.5f * (q1 * gz + q2 * gy - q3 * gx) - BETA * s4;
+
+    // Integrate to yield quaternion
+    q1 += qDot1 * dt;
+    q2 += qDot2 * dt;
+    q3 += qDot3 * dt;
+    q4 += qDot4 * dt;
+    // Normalise quaternion
+    norm = sqrtf(q1 * q1 + q2 * q2 + q3 * q3 + q4 * q4); 
+    norm = 1.0f / norm;
+
+    mpu->qw = q1 * norm;
+    mpu->qx = q2 * norm;
+    mpu->qy = q3 * norm;
+    mpu->qz = q4 * norm;
 }
 
-static void tap_cb(uint8_t direction, uint8_t count)
+///////////////////////////////////////////////////////////////////////////////
+// MPU Sensors Initialization Routine functions
+
+inv_error_t initMPUData(mpu_data_t *mpu)
 {
-    _tap_available = true;
-    tap_count = count;
-    tap_direction = direction;
-}
+    // Initializing gyro bias
+    mpu->gyro_bias[X_AXIS] = mpu->gyro_bias[Y_AXIS] = mpu->gyro_bias[Z_AXIS] = 0.0f;
+    // Initializing gyro bias
+    mpu->acce_bias[X_AXIS] = mpu->acce_bias[Y_AXIS] = mpu->acce_bias[Z_AXIS] = 0.0f;
 
-static void orient_cb(uint8_t orient)
-{
-    mpu9250_orientation = orient;
-}
+    // Initializing compass bias
+    mpu->mag_bias[X_AXIS] = mpu->mag_bias[Y_AXIS] = mpu->mag_bias[Z_AXIS] = 0.0f;
+    // Initializing compass scale
+    mpu->mag_scale[X_AXIS] = mpu->mag_scale[Y_AXIS] = mpu->mag_scale[Z_AXIS] = 1.0f;
 
-// Compute the accelerometer angle using the raw data
-void compute_acce_angle(float *acce_angle)
-{
-    acce_angle[0] = atan2(ay, sqrt(pow(ax, 2) + pow(az, 2))) * RAD_TO_DEG;
-    acce_angle[1] = atan2(-ax, sqrt(pow(ay, 2) + pow(az, 2))) * RAD_TO_DEG;
-}
-
-// Compute the gyroscope angle using the raw data
-void compute_gyro_angle(float dt, float *gyro_angle)
-{
-    gyro_angle[0] = gx * dt;
-    gyro_angle[1] = gy * dt;
-    // gyro_angle[2] = gz * dt;
-
-    /*
-        In cases the roll angle varies widely when only the pitch angle changes, activate the following equations.
-        gyro_angle[0] = dt * (gx + gy * sin(gyro_angle[0]) * tan(gyro_angle[1]) + gz * cos(gyro_angle[0]) * tan(gyro_angle[1]));
-        gyro_angle[1] = dt * (gy * cos(gyro_angle[0]) - gz * sin(gyro_angle[0]));
-        gyro_angle[2] = dt * (gy * sin(gyro_angle[0]) / cos(gyro_angle[1]) + gz * cos(gyro_angle[0]) / sin(gyro_angle[1]));
-    */
-}
-
-void compute_mag_angle(float *mag_angle)
-{
-    if (my == 0)
-        *mag_angle = (mx < 0) ? 180.0 : 0;
-    else
-        *mag_angle = atan2(my, mx) * RAD_TO_DEG + 180;
-}
-
-// Fuse the gyroscope and accelerometer angle in a complementary fashion
-void complementary_filter(void)
-{
-    static bool is_initial_reading = true;
-    static uint32_t timer;
-    static float dt;
-
-    static float acce_angle[2], gyro_angle[2], mag_angle;
-    static float fusion_angle[2];
-    int i = 0;
-
-    if (is_initial_reading)
-    {
-        is_initial_reading = false;
-        compute_acce_angle(acce_angle);
-
-        for (i = 0; i < 2; i++)
-            fusion_angle[i] = acce_angle[i];
-
-        timer = esp_timer_get_time();
-        return;
-    }
-
-    dt = (float)(esp_timer_get_time() - timer) / 1000000;
-    timer = esp_timer_get_time();
-
-    compute_acce_angle(acce_angle);
-    compute_gyro_angle(dt, gyro_angle);
-    compute_mag_angle(&mag_angle);
-
-    for (i = 0; i < 2; i++)
-        fusion_angle[i] = ALPHA * (fusion_angle[i] + gyro_angle[i]) + (1 - ALPHA) * acce_angle[i];
+    // Initializing quaternion
+    mpu->qw = 1.0f;
+    mpu->qx = 0.0f;
+    mpu->qy = 0.0f;
+    mpu->qz = 0.0f;
     
-    ESP_LOGI(TAG_MPU, "Roll: %0.2f | Pitch: %0.2f | Yaw: %0.2f", fusion_angle[0], fusion_angle[1], mag_angle);
+    return INV_SUCCESS;
 }
 
-// Calibrate magnetometer -> To-be-fixed in future iterations
-void calibrate_mag(void)
+void loadCompassOffsets(mpu_data_t *mpu)
 {
-    float mag_max[3] = {-32767, -32767, -32767}, mag_min[3] = {32767, 32767, 32767}, mag_temp[3] = {0, 0, 0};
+    int pos = mpu->pos;
 
-    ESP_LOGI(TAG_MPU, "Mag Calibration: Wave device in a figure eight until done!");
-    vTaskDelay(2000 / portTICK_PERIOD_MS);
-
-    uint16_t sample_count = 20480; // at 100 Hz ODR, new mag data is available every 10 ms
-    for (int i = 0; i < sample_count; i++)
+    switch (pos)
     {
-        if (updateCompass() == INV_SUCCESS) // Read the mag data
-        {
-            mag_temp[0] = mx;
-            mag_temp[1] = my;
-            mag_temp[2] = mz;
+    case MPU_BASE:;
+        mpu->mag_bias[X_AXIS] = 5.026f;
+        mpu->mag_bias[Y_AXIS] = -6.452f;
+        mpu->mag_bias[Z_AXIS] = -3.976;
 
-            for (int j = 0; j < 3; j++)
-            {
-                if (mag_temp[j] > mag_max[j])
-                    mag_max[j] = mag_temp[j];
-                if (mag_temp[j] < mag_min[j])
-                    mag_min[j] = mag_temp[j];
-            }
-        }
+        mpu->mag_scale[X_AXIS] = 0.980f;
+        mpu->mag_scale[Y_AXIS] = 1.013f;
+        mpu->mag_scale[Z_AXIS] = 1.007f;
+        break;
+
+    case MPU_SHOULDER:;
+    case MPU_BICEP:;
+    case MPU_FOREARM:;
+    case MPU_PALM:;
+    default:;
     }
+}
 
-    // Get hard iron correction
-    mag_bias[0] = (mag_max[0] + mag_min[0]) / 2.0; // get bias in x axis
-    mag_bias[1] = (mag_max[1] + mag_min[1]) / 2.0; // get bias in y axis
-    mag_bias[2] = (mag_max[2] + mag_min[2]) / 2.0; // get bias in z axis
+inv_error_t begin(mpu_data_t *mpu, uint8_t calib_flag)
+{
+    // InitialiZing MPU
+    CHECK(mpu_init());
+    // Place all slaves (including compass) on primary bus
+    CHECK(mpu_set_bypass(1));
+    // Enable acce, gyro and compass
+    CHECK(setSensors(INV_XYZ_GYRO | INV_XYZ_ACCEL | INV_XYZ_COMPASS));
+    // Set sample rates for the sensors
+    CHECK(setSampleRate(ACCEL_GYRO_SAMPLE_RATE));
+    CHECK(setCompassSampleRate(COMPASS_SAMPLE_RATE));
+    // Set the full-scale range for the sensors
+    CHECK(setAccelFSR(ACCEL_FSR));
+    CHECK(setGyroFSR(GYRO_FSR));
+    // Set sensitivity for sensors
+    CHECK(setMPUSensitivity(mpu));
+    // Initialize the data to default settings
+    CHECK(initMPUData(mpu));
 
-    // Get soft iron correction estimate
-    mag_scale[0] = (mag_max[0] - mag_min[0]) / 2.0; // get average x axis max chord length in counts
-    mag_scale[1] = (mag_max[1] - mag_min[1]) / 2.0; // get average y axis max chord length in counts
-    mag_scale[2] = (mag_max[2] - mag_min[2]) / 2.0; // get average z axis max chord length in counts
+    if (calib_flag & ACCEL_GYRO_CAL)
+        CHECK(mpuSelfTest(mpu));
 
-    float avg_rad = (mag_scale[0] + mag_scale[1] + mag_scale[2]) / 3.0;
+    if (calib_flag & COMPASS_CAL)
+        CHECK(compassCalibration(mpu));
 
-    mag_scale[0] = avg_rad / mag_scale[0]; // mag scales in Gauss
-    mag_scale[1] = avg_rad / mag_scale[1];
-    mag_scale[2] = avg_rad / mag_scale[2];
+    if (!(calib_flag & COMPASS_CAL))
+        loadCompassOffsets(mpu);
 
-    ESP_LOGI(TAG_MPU, "Magnetometer Calibration Done!");
-    ESP_LOGD(TAG_MPU, "Bias: X: %f, Y: %f, Z: %f", mag_bias[0], mag_bias[1], mag_bias[2]);
-    ESP_LOGD(TAG_MPU, "Scale: X: %f, Y: %f, Z: %f", mag_scale[0], mag_scale[1], mag_scale[2]);
+    ESP_LOGD(TAG_MPU, "Initialized MPU: %d", mpu->pos);
+    return INV_SUCCESS;
+}
+
+inv_error_t initMPU(mpu_data_t *mpu, uint8_t calib_flag)
+{
+    if (i2c_mux_select(mpu->pos))
+        return INV_ERROR;
+
+    CHECK(begin(mpu, calib_flag));
+    CHECK(initMadgwickFilter(mpu));
+
+    return INV_SUCCESS;
+}
+
+inv_error_t initMPUwithDMP(mpu_data_t *mpu, uint8_t calib_flag)
+{
+    if (i2c_mux_select(mpu->pos))
+        return INV_ERROR;
+
+    CHECK(begin(mpu, calib_flag));
+    CHECK(dmpBegin(DMP_FEATURE_6X_LP_QUAT | DMP_FEATURE_GYRO_CAL | DMP_FEATURE_SEND_CAL_GYRO | DMP_FEATURE_SEND_RAW_ACCEL,
+                   DMP_SAMPLE_RATE));
+
+    return INV_SUCCESS;
 }

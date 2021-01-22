@@ -1,9 +1,11 @@
 ### C ###
 # Build folder
-/mpu_raw/build/*
-/mpu_interrupt/build/*
-/mpu_dmp_quaternion/build/*
+/mpu_ahrs_madgwick/build/*
 /mpu_complementary/build/*
+/mpu_dmp_quaternion/build/*
+/mpu_joint_angle/build/*
+/mpu_raw/build/*
+/mpu_self_test_calibration/build/*
 
 # Prerequisites
 *.d
@@ -79,8 +81,4 @@ dkms.conf
 
 ### vscode ###
 .vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
 *.code-workspace
