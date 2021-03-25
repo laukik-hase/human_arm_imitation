@@ -3,28 +3,34 @@ import time
 from arm_imitation.msg import msg_joint_angles
 import arm_control_utils
 
-THRESHOLD = 10
+record_error = False
+offset = [180, 180, 180, 180]
+# offset = [180 180 90] # niryo
+DXL_ID = [1, 2, 3, 8]
+my_arm_controller = arm_control_utils.arm_controller(DXL_ID)
 
-state_file = open("path_error.csv", "w")
+if record_error:
+    state_file = open("path_error.csv", "w")
 
 def callback(data):
-    state = [-1 for i in range(3)]
+    state = [ int( ( (data.joint_angles[i] + offset[i]) % 360 ) / 360.0 * 4096 ) for i in range(my_arm_controller.JOINTS)]
+    print(state)
     # print(data.joint_angles)
-    state[0] = int( ( (data.joint_angles[0] ) % 360 ) / 360.0 * 4096 )
-    state[1] = int( ( (data.joint_angles[1] ) % 360 ) / 360.0 * 4096 )
-    state[2] = int( ( (data.joint_angles[2] ) % 360 ) / 360.0 * 4096 )
-    for point in state:
-        if (point < 1000 or point > 3100):
-            print("invalid")
-            print(state)
-            return
-    arm_control_utils.write_state(state)
-    str_state = [str(i) for i in state]
-    state_file.write(",".join(str_state) + ",")
+
+    # for point in state:
+    #     if (point < 1000 or point > 3100):
+    #         print("invalid")
+    #         print(state)
+    #         return
+    my_arm_controller.write_state(state)
     
-    current_state = arm_control_utils.read_state()
-    str_state = [str(i) for i in current_state]
-    state_file.write(",".join(str_state) + "\n")
+    if record_error:
+        str_state = [str(i) for i in state]
+        state_file.write(",".join(str_state) + ",")
+        
+        current_state = my_arm_controller.read_state()
+        str_state = [str(i) for i in current_state]
+        state_file.write(",".join(str_state) + "\n")
 
     time.sleep(0.01)
     
@@ -33,11 +39,11 @@ def listener():
     rospy.Subscriber("/joint_angles", msg_joint_angles, callback)
     rospy.spin()
 
-arm_control_utils.initialize_motors()
-arm_control_utils.enable_state_torque()
+my_arm_controller.initialize_motors()
+my_arm_controller.enable_state_torque()
 # imitate
 print("Ready to imitate")
 listener()
 
-arm_control_utils.disable_state_torque()
-arm_control_utils.stop_motors()
+my_arm_controller.disable_state_torque()
+my_arm_controller.stop_motors()
