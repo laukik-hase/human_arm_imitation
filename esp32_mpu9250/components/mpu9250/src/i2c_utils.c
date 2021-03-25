@@ -41,8 +41,15 @@ int i2c_write_to_slave(uint8_t slave_addr, uint8_t reg_addr, size_t len, uint8_t
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
     i2c_master_write_byte(cmd, slave_addr << 1 | WRITE_BIT, ACK_CHECK_EN);
-    i2c_master_write_byte(cmd, reg_addr, ACK_CHECK_EN);
-    i2c_master_write(cmd, data_wr, len, ACK_CHECK_EN);
+
+    if (len == 0)
+        i2c_master_write_byte(cmd, *data_wr, ACK_CHECK_EN);
+    else
+    {
+        i2c_master_write_byte(cmd, reg_addr, ACK_CHECK_EN);
+        i2c_master_write(cmd, data_wr, len, ACK_CHECK_EN);
+    }
+
     i2c_master_stop(cmd);
     esp_err_t ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
     i2c_cmd_link_delete(cmd);
@@ -76,21 +83,20 @@ int i2c_read_from_slave(uint8_t slave_addr, uint8_t reg_add, size_t len, uint8_t
         return -1;
 }
 
-void combine_msb_lsb_raw_data(uint8_t *buf_1, int16_t *buf_2)
+int i2c_mux_select(mpu_pos_t joint)
 {
-    buf_2[0] = ((buf_1[0] << 8) + buf_1[1]);
-    buf_2[1] = ((buf_1[2] << 8) + buf_1[3]);
-    buf_2[2] = ((buf_1[4] << 8) + buf_1[5]);
+    uint8_t val = ((uint8_t)1) << (joint);
+    return i2c_write_to_slave(TCA9548_ADDR, 0x00, 0, &val);
 }
 
-int esp32_get_clock_ms(unsigned long *count)
+int esp32_get_clock_ms(uint32_t *count)
 {
     uint32_t time_us = esp_timer_get_time();
     *count = (float)(time_us) / 1000;
     return 0;
 }
 
-int esp32_delay_ms(unsigned long num_ms)
+int esp32_delay_ms(uint32_t num_ms)
 {
     vTaskDelay(num_ms / portTICK_RATE_MS);
     return 0;

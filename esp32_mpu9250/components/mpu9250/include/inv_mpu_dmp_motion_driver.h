@@ -51,25 +51,25 @@
 
 /* Set up functions. */
 int dmp_load_motion_driver_firmware(void);
-int dmp_set_fifo_rate(unsigned short rate);
-int dmp_get_fifo_rate(unsigned short *rate);
-int dmp_enable_feature(unsigned short mask);
-int dmp_get_enabled_features(unsigned short *mask);
+int dmp_set_fifo_rate(uint16_t rate);
+int dmp_get_fifo_rate(uint16_t *rate);
+int dmp_enable_feature(uint16_t mask);
+int dmp_get_enabled_features(uint16_t *mask);
 int dmp_set_interrupt_mode(uint8_t mode);
-int dmp_set_orientation(unsigned short orient);
-int dmp_set_gyro_bias(long *bias);
-int dmp_set_accel_bias(long *bias);
+int dmp_set_orientation(uint16_t orient);
+int dmp_set_gyro_bias(int32_t *bias);
+int dmp_set_accel_bias(int32_t *bias);
 
 /* Tap functions. */
 int dmp_register_tap_cb(void (*func)(uint8_t, uint8_t));
-int dmp_set_tap_thresh(uint8_t axis, unsigned short thresh);
+int dmp_set_tap_thresh(uint8_t axis, uint16_t thresh);
 int dmp_set_tap_axes(uint8_t axis);
 int dmp_set_tap_count(uint8_t min_taps);
-int dmp_set_tap_time(unsigned short time);
-int dmp_set_tap_time_multi(unsigned short time);
-int dmp_set_shake_reject_thresh(long sf, unsigned short thresh);
-int dmp_set_shake_reject_time(unsigned short time);
-int dmp_set_shake_reject_timeout(unsigned short time);
+int dmp_set_tap_time(uint16_t time);
+int dmp_set_tap_time_multi(uint16_t time);
+int dmp_set_shake_reject_thresh(int32_t sf, uint16_t thresh);
+int dmp_set_shake_reject_time(uint16_t time);
+int dmp_set_shake_reject_timeout(uint16_t time);
 
 /* Android orientation functions. */
 int dmp_register_android_orient_cb(void (*func)(uint8_t));
@@ -79,10 +79,10 @@ int dmp_enable_lp_quat(uint8_t enable);
 int dmp_enable_6x_lp_quat(uint8_t enable);
 
 /* Pedometer functions. */
-int dmp_get_pedometer_step_count(unsigned long *count);
-int dmp_set_pedometer_step_count(unsigned long count);
-int dmp_get_pedometer_walk_time(unsigned long *time);
-int dmp_set_pedometer_walk_time(unsigned long time);
+int dmp_get_pedometer_step_count(uint32_t *count);
+int dmp_set_pedometer_step_count(uint32_t count);
+int dmp_get_pedometer_walk_time(uint32_t *time);
+int dmp_set_pedometer_walk_time(uint32_t time);
 
 /* DMP gyro calibration functions. */
 int dmp_enable_gyro_cal(uint8_t enable);
@@ -90,8 +90,8 @@ int dmp_enable_gyro_cal(uint8_t enable);
 /* Read function. This function should be called whenever the MPU interrupt is
  * detected.
  */
-int dmp_read_fifo(short *gyro, short *accel, long *quat,
-    unsigned long *timestamp, short *sensors, uint8_t *more);
+int dmp_read_fifo(int16_t *gyro, int16_t *accel, int32_t *quat,
+    uint32_t *timestamp, int16_t *sensors, uint8_t *more);
 
 #endif  /* #ifndef _INV_MPU_DMP_MOTION_DRIVER_H_ */
 
