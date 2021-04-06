@@ -5,6 +5,7 @@ import json
 # pypot imports
 import pypot.dynamixel
 
+num = 3
 
 ports = pypot.dynamixel.get_available_ports()
 
@@ -85,86 +86,39 @@ def setTorque1(id, duration, coeffs):
             pass
 #         print "Nb errors : ", errorCounter
 
-
-print("Test with PID only:")
+dxl_io.enable_torque([1])
+dxl_io.enable_torque([2])
+dxl_io.enable_torque([3])
+dxl_io.enable_torque([4])
+print ("Test with PID only:")
+dxl_io.set_mode_dynaban({num:0})
 time.sleep(0.1)
-# dxl_io.enable_torque({4: 1})
+dxl_io.enable_torque({num:1})
 time.sleep(0.1)
-# 1 = predictive only # 2 = PID only, # 3 = PID + predictive, # 4 = compliant kind of, # 5 = no strings attached
-
-
-# l = 0.085
-# #Torque = m*g*l
-# g = 9.81
-# m = 0.2
-# torque = m*g*l*4096/numpy.pi
-
-# dxl_io.set_angle_limit({4: (3100,4096)})
-
-dxl_io.set_mode_dynaban({4: 0})
-dxl_io.enable_torque({4: 0})
-
-print("Setting traj1 :")
-setTraj1(4, 20000, [3072.0, -512.0, 0.0])
-
-# print("Setting torque ...")
-# setTorque1(4, 20000, [1023.0,0.0,0.0])
-
-print("Setting mode and tracking :")
-
-dxl_io.enable_torque({4: 1})
-dxl_io.set_mode_dynaban({4: 2})
-# time.sleep(0.25)
-setTraj2(4, 20000, [2048.0, -512.0, 0.0])
-dxl_io.set_copy_next_buffer({4: 1})
-time.sleep(0.5)
-# time.sleep(3)
-setTraj2(4, 20000, [1024.0, 512.0, 0.0])
-dxl_io.set_copy_next_buffer({4: 1})
-time.sleep(0.5)
-# dxl_io.set_mode_dynaban({4: 0})
-# dxl_io.enable_torque({4: 0})
-# setTraj2(4, 20000, [3072.0, -512.0, 0.0])
-# dxl_io.set_copy_next_buffer({4: 1})
-# dxl_io.set_mode_dynaban({4: 0})
-# dxl_io.enable_torque({4: 0})
-# setTraj1(4, 20000, [2048.0, 512.0, 0.0])
-
-# # print("Setting torque ...")
-# # setTorque1(4, 20000, [1023.0,0.0,0.0])
-
-# print("Setting mode and tracking :")
-
-# dxl_io.enable_torque({4: 1})
-# dxl_io.set_mode_dynaban({4: 2})
-
-# time.sleep(0.5)
-# dxl_io.set_mode_dynaban({4: 0})
-# dxl_io.enable_torque({4: 0})
-
-
-# time.sleep(0.5)
-# setTraj2(4, 20000, [3072.0, -512.0, 0.0])
-# dxl_io.set_copy_next_buffer({4: 1})
-# time.sleep(0.5)
-
-# dxl_io.set_mode_dynaban({4: 0})
-# # dxl_io.set_goal_position({1:0})
+# dxl_io.set_goal_position({4:90})
 # time.sleep(1)
+# dxl_io.set_pid_gain({4:[1,0,0]})
+# time.sleep(0.1)
 
-# dxl_io.set_mode_dynaban({4: 0})
-# dxl_io.enable_torque({4: 0})
+setTraj1(num, 40000, [2048.0, 0, 0.0])
+# setTorque1(num, 40000, [0.0,0.0,0.0])        
+print ("Setting mode and tracking :")
 
-# print("Setting traj1 :")
-# setTraj1(4, 20000, [2048.0])
+dxl_io.set_mode_dynaban({num:2}) 
+print ("Sleeping")
 
-# print("Setting torque ...")
-# setTorque1(4, 20000, [1023.0])
-
-# print("Setting mode and tracking :")
-# # 1 = predictive only # 2 = PID only, # 3 = PID + predictive, # 4 = compliant kind of, # 5 = no strings attached
-# dxl_io.enable_torque({4: 1})
-# dxl_io.set_mode_dynaban({4: 3})
-
-# print("Sleeping")
-# time.sleep(2)
+# while True :
+#             print "Sleeping"
+#             time.sleep(2.5)
+            
+#             print "Done. Compliant mode on"
+#             dxlIo.enable_torque({1:0})
+#             m = float(raw_input("m ?\n"))
+#             print "m = ", m, " kg"
+#             torque = m*g*l*4096/numpy.pi
+#             print "torque = ", torque, " N.m"
+#             dxlIo.enable_torque({1:1})
+#             print "Setting torque ..."
+#             self.setTraj1(1, 20000, [0.0, 0.0, 0.0, 0.0, 0.0])
+#             self.setTorque1(1, 20000, [torque, 0.0, 0.0, 0.0, 0.0])
+#             self.dxl_io.set_mode_dynaban({1:1})

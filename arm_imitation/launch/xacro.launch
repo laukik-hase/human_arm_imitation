@@ -1,0 +1,10 @@
+<launch>
+    <arg name="file" default="manipulator4.xacro"/>
+    <param name="robot_description" command="$(find xacro)/xacro '$(find arm_imitation)/urdf/$(arg file)'"/>
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
+    <node name="rviz" pkg="rviz" type="rviz" args=" -d $(find arm_imitation)/launch/config.rviz" />
+    
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" >
+        <param name="use_gui" value="True"/>
+    </node>
+</launch>

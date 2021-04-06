@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+  <launch>
+
+   <!-- Here is the parameter that needs to be set when starting gazebo, generally no need to modify -->
+   <arg name="paused" default="false"/>
+   <arg name="use_sim_time" default="true"/>
+   <arg name="gui" default="true"/>
+   <arg name="headless" default="false"/>
+   <arg name="debug" default="false"/>
+
+       <!-- Create a new world in Gazebo and set it with the above parameters, generally no need to modify -->
+   <include file="$(find gazebo_ros)/launch/empty_world.launch">
+      <arg name="debug" value="$(arg debug)" />
+      <arg name="gui" value="$(arg gui)" />
+      <arg name="paused" value="$(arg paused)"/>
+      <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+      <arg name="headless" value="$(arg headless)"/>
+    </include>
+
+         <!-- Import urdf file, the first parameter is changed to the function package name, and the second parameter is changed to the path of the urdf file -->
+    <param name="robot_description" command="cat '$(find mobile_manipulator)/urdf/test.urdf'" />
+
+         <!-- Import the spawn_urdf node to enable Gazebo to recognize urdf files. The parameter that needs to be modified is the path of the feature package -->
+    <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param /robot_description -urdf -model test" />
+    
+  </launch>
