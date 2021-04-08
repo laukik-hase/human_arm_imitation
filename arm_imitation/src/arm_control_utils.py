@@ -24,14 +24,18 @@ class arm_controller:
     def __init__(self, dxl_id, devicename='/dev/ttyUSB0', baudrate=1000000):
 
         # Control table address
-        self.ADDR_MX_TORQUE_ENABLE       = 24               # Control table address is different in Dynamixel model
-        self.ADDR_MX_GOAL_POSITION       = 30
-        self.ADDR_MX_PRESENT_POSITION    = 36
-        self.ADDR_MX_MOVING_SPEED        = 32
+        self.ADDR_MX_TORQUE_ENABLE              = 24               # Control table address is different in Dynamixel model
+        self.ADDR_MX_GOAL_POSITION              = 30
+        self.ADDR_MX_PRESENT_POSITION           = 36
+        self.ADDR_MX_MOVING_SPEED               = 32
+        self.ADDR_MX_TORQUE_CONTROL_MODE_ENABLE = 70
+        self.ADDR_MX_GOAL_TORQUE                = 71
 
         # Data Byte Length
-        self.LEN_MX_GOAL_POSITION       = 4
-        self.LEN_MX_PRESENT_POSITION    = 4
+        self.LEN_MX_GOAL_POSITION              = 4
+        self.LEN_MX_PRESENT_POSITION           = 4
+        self.LEN_MX_TORQUE_CONTROL_MODE_ENABLE = 1
+        self.LEN_MX_GOAL_TORQUE                = 2
 
         # Protocol version
         self.PROTOCOL_VERSION            = 1.0               # See which protocol version is used in the Dynamixel
@@ -43,12 +47,14 @@ class arm_controller:
         self.DEVICENAME                  = devicename    # Check which port is being used on your controller
                                                         # ex) Windows: "COM1"   Linux: "/dev/ttyUSB0" Mac: "/dev/tty.usbserial-*"
 
-        self.TORQUE_ENABLE               = 1                 # Value for enabling the torque
-        self.TORQUE_DISABLE              = 0                 # Value for disabling the torque
-        self.DXL_MINIMUM_POSITION_VALUE  = 1024          # Dynamixel will rotate between this value
-        self.DXL_MAXIMUM_POSITION_VALUE  = 3072            # and this value (note that the Dynamixel would not move when the position value is out of movable range. Check e-manual about the range of the Dynamixel you use.)
-        self.DXL_MOVING_STATUS_THRESHOLD = 20                # Dynamixel moving status threshold
-        self.MOVING_SPEED                = 100                           # Dynamixel moving speed  (0-1023)
+        self.TORQUE_ENABLE                = 1                 # Value for enabling the torque
+        self.TORQUE_DISABLE               = 0                 # Value for disabling the torque
+        self.DXL_MINIMUM_POSITION_VALUE   = 1024          # Dynamixel will rotate between this value
+        self.DXL_MAXIMUM_POSITION_VALUE   = 3072            # and this value (note that the Dynamixel would not move when the position value is out of movable range. Check e-manual about the range of the Dynamixel you use.)
+        self.DXL_MOVING_STATUS_THRESHOLD  = 20                # Dynamixel moving status threshold
+        self.MOVING_SPEED                 = 100                           # Dynamixel moving speed  (0-1023)
+        self.TORQUE_CONTROL_MODE_ENABLE   = 1
+        self.TORQUE_CONTROL_MODE_DISABLE  = 0
         # self.OFFSETS                     = offsets
         # Initialize PortHandler instance
         # Set the port path
@@ -156,3 +162,18 @@ class arm_controller:
     def stop_motors(self):
         # Close port
         self.portHandler.closePort()
+
+    def enable_torque_control_mode(self, ID):
+        dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, ID, self.ADDR_MX_TORQUE_CONTROL_MODE_ENABLE, self.TORQUE_CONTROL_MODE_ENABLE)
+        if self.success(dxl_comm_result, dxl_error):
+            print("Torque control mode enabled self.successfully for Dynamixel#%d" % ID)
+    
+    def disable_torque_control_mode(self, ID):
+        dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, ID,  self.ADDR_MX_TORQUE_CONTROL_MODE_ENABLE, self.TORQUE_CONTROL_MODE_DISABLE)
+        if self.success(dxl_comm_result, dxl_error):
+            print("Torque control mode disabled self.successfully for Dynamixel#%d" % ID)
+
+    def set_goal_torque(self, ID, _value):
+        dxl_comm_result, dxl_error = self.packetHandler.write2ByteTxRx(self.portHandler, ID, self.ADDR_MX_GOAL_TORQUE, _value)
+        if self.success(dxl_comm_result, dxl_error):
+            print("Goal torque set self.successfully for Dynamixel#%d" % ID)

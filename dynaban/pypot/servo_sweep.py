@@ -5,7 +5,7 @@ import json
 # pypot imports
 import pypot.dynamixel
 
-num = 2
+num = 4
 
 ports = pypot.dynamixel.get_available_ports()
 
@@ -108,10 +108,11 @@ def setTorque2(id, duration, coeffs):
             pass
 #         print "Nb errors : ", errorCounter
 
-# ID_LIST = [1, 2, 3, 4]
+# ID_LIST = [1, 2, 4]
 # ID_SIZE = len(ID_LIST)
 
 # DXL_DICT_1      = dict(zip(ID_LIST, [1]*ID_SIZE))
+# DXL_DICT_2      = dict(zip(ID_LIST, [2]*ID_SIZE))
 # DXL_DICT_0      = dict(zip(ID_LIST, [0]*ID_SIZE))
 # DXL_DICT_PID    = dict(zip(ID_LIST, [[1,0,0]]*ID_SIZE))
     
@@ -122,65 +123,56 @@ def setTorque2(id, duration, coeffs):
 # dxl_io.set_pid_gain(DXL_DICT_PID)
 # time.sleep(0.1)
 
-print ("Test with PID only:")
+print "Test with PID only:"
 dxl_io.set_mode_dynaban({num:0})
 time.sleep(0.1)
 dxl_io.enable_torque({num:1})
 time.sleep(0.1)
 
-# dxl_io.set_goal_position({num:90})
-# time.sleep(1)
+dxl_io.set_goal_position({num:0})
+time.sleep(1)
 dxl_io.set_pid_gain({num:[1,0,0]})
+time.sleep(0.1)
 
-# time.sleep(1)
 
-setTraj1(num, 10000, [1024.0, -512.0, 0.0])
 
-print ("Setting mode and tracking :")
+print "Setting traj1 :"
 
+setTorque1(num,20000,[4.096,0.0,0.0]) 
+setTraj1(num,20000, [2048.0,512.0,0.0])
 dxl_io.set_mode_dynaban({num:3}) 
-# time.sleep(1)
-# while True:
-#     print ("START")
 
-#     # setTraj2(num, 10000, [2560.0, -512.0, 0.0])
-#     # dxl_io.set_copy_next_buffer({num:1})
-#     # time.sleep(1)
-
-#     # setTraj2(num, 10000, [2048.0, -512.0, 0.0])
-#     # dxl_io.set_copy_next_buffer({num:1})
-#     # time.sleep(1)
-
-#     setTraj2(num, 10000, [1536.0, -512.0, 0.0])
-#     dxl_io.set_copy_next_buffer({num:1})
-#     time.sleep(1)
-
-#     setTraj2(num, 10000, [1024.0, 512.0, 0.0])
-#     dxl_io.set_copy_next_buffer({num:1})
-#     time.sleep(1)
+# setTorque2(num,40000,[5.0,0.0,0.0])
+# setTraj2(num,40000, [0.0,1024.0,0.0])
     
-#     setTraj2(num, 10000, [1536.0, 512.0, 0.0])
-#     dxl_io.set_copy_next_buffer({num:1})
-#     time.sleep(1)
+# dxl_io.set_copy_next_buffer({num:1}) 
+# time.sleep(2)
+# time.sleep(1)
+# dxl_io.set_goal_position({num:0})
 
-#     setTraj2(num, 10000, [2048.0, -512.0, 0.0])
-#     dxl_io.set_copy_next_buffer({num:1})
-#     time.sleep(1)
-#     # setTraj2(num, 10000, [1536.0, 512.0, 0.0])
-#     # dxl_io.set_copy_next_buffer({num:1})
-#     # time.sleep(1)
+# time.sleep(2)
+# i = 0   
+# while True:
+#     setTorque2(num,10000,[-1.0,0.0,0.0])
+#     setTraj2(num,10000, [1024.0,-512.0,0.0])
+    
+#     dxl_io.set_copy_next_buffer({num:1}) 
+#     time.sleep(2)
+#     print(i)
+#     i = i +1
+   
+#     setTorque2(num,10000,[1.0,0.0,0.0])
+#     setTraj2(num,10000, [0.0,512.0,0.0])
+    
+#     dxl_io.set_copy_next_buffer({num:1}) 
+    
+#     time.sleep(2)
 
-#     # setTraj2(num, 10000, [2048.0, 512.0, 0.0])
-#     # dxl_io.set_copy_next_buffer({num:1})
-#     # time.sleep(1)
+    
+ 
+#     
+# 
 
-#     # setTraj2(num, 10000, [2560.0, 512.0, 0.0])
-#     # dxl_io.set_copy_next_buffer({num:1})
-#     # time.sleep(1)
 
-#     # setTraj2(num, 10000, [3072.0, -512.0, 0.0])
-#     # dxl_io.set_copy_next_buffer({num:1}) 
-#     # time.sleep(1)
 
-#     print("END")
 
