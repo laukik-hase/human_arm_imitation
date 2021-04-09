@@ -51,7 +51,7 @@
     <collision>
       <origin xyz="${trans}" rpy="${rpy}"/>
       <geometry>
-        <box size="0.041 0.0402 0.0611"/>
+        <mesh filename="package://mobile_manipulator/meshes/dynamixel_x64series.stl" scale="0.001 0.001 0.001"/>
       </geometry>    
     </collision> 
 </xacro:macro>

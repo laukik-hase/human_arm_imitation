@@ -6,15 +6,19 @@ import arm_control_utils
 record_error = False
 offset = [180, 180, 180, 180]
 # offset = [180 180 90] # niryo
-DXL_ID = [1, 2, 3, 8]
+DXL_ID = [3, 4]
 my_arm_controller = arm_control_utils.arm_controller(DXL_ID)
 
 if record_error:
     state_file = open("path_error.csv", "w")
 
 def callback(data):
-    state = [ int( ( (data.joint_angles[i] + offset[i]) % 360 ) / 360.0 * 4096 ) for i in range(my_arm_controller.JOINTS)]
+    # state = [ int( ( (data.joint_angles[i] + offset[i]) % 360 ) / 360.0 * 4096 ) for i in range(my_arm_controller.JOINTS)]
+    # print(state)
+    print("test")
+    state = [int( ( (data.joint_angles[0] + offset[0]) % 360 ) / 360.0 * 4096 ), int( ( (data.joint_angles[1] + offset[1]) % 360 ) / 360.0 * 4096 )]
     print(state)
+    
     # print(data.joint_angles)
 
     # for point in state:
