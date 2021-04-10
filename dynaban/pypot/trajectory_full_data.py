@@ -43,17 +43,17 @@ count = 0
 # fit_cp1 = func1(np.array (temperature), *popt1)
 #fit_cp2 = func2(np.array (angle), *popt2)
 #print(popt2)
-print(np.linspace(0,0.5,10))
+# print(np.linspace(0,0.5,10))
 for value in angle:
     # coeff[count], pcov2[count] = curve_fit(func2, value, np.linspace(0,0.5,len(value)))
     coeff[count], pcov2[count] = curve_fit(func2, np.linspace(0,0.5,len(value)),value)
     fit_cp2 = func2(np.array(value), *coeff[count])
     #print(value)
 
-    print(coeff[count],count)
+#     print(coeff[count],count)
     #print(range(0,len(value)))
     count = count + 1
-print(coeff[0][0])
+print(coeff)
 # plt.figure()
 # plt.plot(temperature, cp, color = 'blue', lw = 3)
 # plt.plot (temperature, fit_cp2, color = 'green', lw = 3)

@@ -1,5 +1,5 @@
 <?xml version ="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="mobile_manipulator">
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="manipulator">
 <!--0.5624 height to start-->
 <material name="white">
   <color rgba="1 1 1 1"/>

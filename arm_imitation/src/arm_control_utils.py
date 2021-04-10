@@ -21,7 +21,7 @@ else:
         return ch
 
 class arm_controller:
-    def __init__(self, dxl_id, devicename='/dev/ttyUSB2', baudrate=1000000):
+    def __init__(self, dxl_id, devicename='/dev/ttyUSB0', baudrate=1000000):
 
         # Control table address
         self.ADDR_MX_TORQUE_ENABLE              = 24               # Control table address is different in Dynamixel model
