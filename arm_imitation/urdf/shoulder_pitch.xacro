@@ -1,0 +1,160 @@
+<?xml version ="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="manipulator">
+<!--0.5624 height to start-->
+<material name="white">
+  <color rgba="1 1 1 1"/>
+</material>  
+<!-- https://emanual.robotis.com/docs/en/dxl/mx/mx-64/#specifications -->
+<xacro:property name="MXLength" value="0.0611"/>
+<xacro:property name="MXWidth" value="0.0402"/>
+<xacro:property name="MXDepth" value="0.041"/>
+<xacro:property name="MXWeight" value="0.165"/>
+
+<xacro:property name="MXLengthAxisShort" value="0.013"/>
+<xacro:property name="MXLengthAxisLong" value="0.0481"/>
+
+<xacro:property name="MXCouplerThickness" value="0.0025"/>
+
+<!-- dimesnions are measured, weight is approximate -->
+<xacro:property name="LinkLength" value="0.096"/>
+<xacro:property name="LinkWidth" value="0.04"/>
+<xacro:property name="LinkHeight" value="0.04"/>
+<xacro:property name="LinkWeight" value="0.100"/> 
+
+<xacro:property name="MXBracketLength" value="0.036"/>
+
+<xacro:property name="AXBracketLength" value="0.052"/>
+
+<!-- length of arm for 3 dof structure. Refer image -->
+<xacro:property name="ArmLength" value="${MXWidth/2 + MXBracketLength + LinkLength + MXLengthAxisLong + MXBracketLength + LinkLength + AXBracketLength}"/>
+
+<!-- MACROS -->
+
+<xacro:macro name="MXInertial" params="trans rpy">
+  <inertial>
+    <origin xyz="${trans}" rpy="${rpy}" />
+    <mass value="0.140" />
+    <inertia ixx="0.000050799110" ixy="0.0" ixz="0.0" iyy="0.00002857215" iyz="0.00000051457" izz="0.000043394" />
+  </inertial>
+</xacro:macro>
+
+<xacro:macro name="MXVisual" params="trans rpy">
+  <visual>
+    <origin xyz="${trans}" rpy="${rpy}"/>
+    <geometry>
+      <mesh filename="package://mobile_manipulator/meshes/dynamixel_x64series.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="white"/>         
+  </visual>
+</xacro:macro>
+
+<xacro:macro name="MXCollision" params="trans rpy">
+    <collision>
+      <origin xyz="${trans}" rpy="${rpy}"/>
+      <geometry>
+        <mesh filename="package://mobile_manipulator/meshes/dynamixel_x64series.stl" scale="0.001 0.001 0.001"/>
+      </geometry>    
+    </collision> 
+</xacro:macro>
+
+<xacro:macro name="LinkInertial" params="trans rpy">
+  <inertial>
+    <origin xyz="${trans}" rpy="${rpy}"/>
+    <mass value="${0.005*LinkLength}" />
+    <inertia ixx="0.000050799110" ixy="0.0" ixz="0.0" iyy="0.00002857215" iyz="0.00000051457" izz="0.000043394"/>
+  </inertial>
+</xacro:macro>
+
+<xacro:macro name="LinkVisual" params="trans rpy">
+  <visual>
+    <origin xyz="${trans}" rpy="${rpy}"/>
+    <geometry>
+      <box size="0.04 0.04 ${LinkLength}"/>
+    </geometry>
+    <material name="white"/>       
+  </visual>
+</xacro:macro>
+
+<xacro:macro name="LinkCollision" params="trans rpy">
+    <collision>
+      <origin xyz="${trans}" rpy="${rpy}"/>
+      <geometry>
+        <box size="0.04 0.04 ${LinkLength}"/>
+      </geometry>    
+    </collision> 
+</xacro:macro> 
+
+<xacro:macro name="ArmInertial" params="trans rpy">
+  <inertial>
+    <origin xyz="${trans}" rpy="${rpy}"/>
+    <mass value="${2*MXWeight + 2*LinkWeight}" />
+    <inertia ixx="0.000050799110" ixy="0.0" ixz="0.0" iyy="0.00002857215" iyz="0.00000051457" izz="0.000043394"/>
+  </inertial>
+</xacro:macro>
+
+<xacro:macro name="ArmVisual" params="trans rpy">
+  <visual>
+    <origin xyz="${trans}" rpy="${rpy}"/>
+    <geometry>
+      <box size="0.04 0.04 ${ArmLength}"/>
+    </geometry>
+    <material name="white"/>       
+  </visual>
+</xacro:macro>
+
+<xacro:macro name="ArmCollision" params="trans rpy">
+    <collision>
+      <origin xyz="${trans}" rpy="${rpy}"/>
+      <geometry>
+        <box size="0.04 0.04 ${ArmLength}"/>
+      </geometry>    
+    </collision> 
+</xacro:macro> 
+
+<xacro:macro name="RevJoint" params="id trans rpy parent child axis l u v">
+    <joint name="${id}" type="revolute">
+      <origin xyz="${trans}" rpy="${rpy}"/>
+      <parent link="${parent}"/>
+      <child link="${child}"/>
+      <axis xyz="${axis}"/>
+      <limit lower="${l}" upper="${u}" effort="300" velocity="${v}"/>
+    </joint>
+</xacro:macro> 
+
+<xacro:macro name="FxdJoint" params="id trans rpy parent child">
+    <joint name="${id}" type="fixed">
+      <origin xyz="${trans}"  rpy="${rpy}" />
+      <parent link="${parent}"/>
+      <child link="${child}"/> 
+    </joint>
+</xacro:macro>    
+
+<!-- LINKS -->
+<!-- the trans parameter present here is to toggle distance of current object with respect to previous adjacent object i.e. its parent-->
+  <link name="base_link">
+    <xacro:LinkInertial trans="0 0 0.5624" rpy="0 0 0" />
+    <xacro:LinkVisual trans="0 0 0.5624" rpy="0 0 0" />
+    <xacro:LinkCollision trans="0 0 0.5624" rpy="0 0 0" />
+  </link>
+
+  <link name="shoulder_yaw_motor">
+    <xacro:MXInertial trans="0 0 ${MXDepth/2}" rpy="0 0 0 "/>  
+    <xacro:MXVisual trans="0 0 ${MXDepth/2}" rpy="0 0 0 "/>
+    <xacro:MXCollision trans="0 0 ${MXDepth/2}" rpy="0 0 0"/>
+  </link>
+
+  <link name="biscep">
+    <xacro:ArmInertial trans="0 ${MXDepth/2 + MXCouplerThickness} ${ArmLength/2 - MXLengthAxisShort}" rpy="0 0 0" />
+    <xacro:ArmVisual trans="0 ${MXDepth/2 + MXCouplerThickness} ${ArmLength/2 - MXLengthAxisShort}" rpy="0 0 0" />
+    <xacro:ArmCollision trans="0 ${MXDepth/2 + MXCouplerThickness} ${ArmLength/2 - MXLengthAxisShort}" rpy="0 0 0" />
+  </link> 
+
+  
+  
+ <!-- JOINTS -->
+ <!-- the trans parameter present here is to toggle distance of current object with respect to next adjacent object i.e. its child-->
+  <xacro:FxdJoint id="base_joint" trans="0 ${LinkWidth/2} 0.5624" rpy="1.57 0 3.14" parent="base_link" child="shoulder_yaw_motor"/>
+  <xacro:RevJoint id="shoulder_yaw" trans="0 0 ${MXDepth}" rpy="1.57 0 0" parent="shoulder_yaw_motor" child="biscep" axis="0 1 0" l="-3.14" u="3.14" v="1.0"/>
+
+
+</robot>

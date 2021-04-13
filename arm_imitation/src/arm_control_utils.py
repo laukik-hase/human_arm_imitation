@@ -30,13 +30,14 @@ class arm_controller:
         self.ADDR_MX_MOVING_SPEED               = 32
         self.ADDR_MX_TORQUE_CONTROL_MODE_ENABLE = 70
         self.ADDR_MX_GOAL_TORQUE                = 71
-
+        self.ADDR_MX_PRESENT_LOAD               = 40
+        
         # Data Byte Length
         self.LEN_MX_GOAL_POSITION              = 4
         self.LEN_MX_PRESENT_POSITION           = 4
         self.LEN_MX_TORQUE_CONTROL_MODE_ENABLE = 1
         self.LEN_MX_GOAL_TORQUE                = 2
-
+        self.LEN_MX_PRESENT_LOAD               = 2
         # Protocol version
         self.PROTOCOL_VERSION            = 1.0               # See which protocol version is used in the Dynamixel
 
@@ -73,7 +74,7 @@ class arm_controller:
         self.groupBulkRead = GroupBulkRead(self.portHandler, self.packetHandler)
 
 
-    def success(self, _dxl_comm_result, _dxl_error):
+    def success(self, _dxl_comm_result, _dxl_error, id='x'):
         status = False
         if _dxl_comm_result != COMM_SUCCESS:
             print("%s" % self.packetHandler.getTxRxResult(_dxl_comm_result))
@@ -177,3 +178,12 @@ class arm_controller:
         dxl_comm_result, dxl_error = self.packetHandler.write2ByteTxRx(self.portHandler, ID, self.ADDR_MX_GOAL_TORQUE, _value)
         if self.success(dxl_comm_result, dxl_error):
             print("Goal torque set self.successfully for Dynamixel#%d" % ID)
+    
+    def read_torque(self):
+        _state = [-1 for i in range(self.JOINTS)]
+        for i in range(self.JOINTS):
+            dxl_present_load, dxl_comm_result, dxl_error = self.packetHandler.read2ByteTxRx(self.portHandler, self.DXL_ID[i], self.ADDR_MX_PRESENT_LOAD)
+            self.success(dxl_comm_result, dxl_error, self.DXL_ID[i])
+            _state[i] = dxl_present_load % 4096
+        return _state
+        

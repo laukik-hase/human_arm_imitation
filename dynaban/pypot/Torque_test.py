@@ -12,7 +12,7 @@ import csv
 import pypot.dynamixel
 import sys
 
-state_file = open("Shoulder_sweep_with_torque.csv", "w")
+state_file = open("test.csv", "w")
 
 num1 = 2
 
@@ -141,44 +141,56 @@ dxl_io.set_goal_position({num1:0})
 time.sleep(1)
 dxl_io.set_pid_gain({num1:[1,0,0]})
 
+# #             print((time.time()-time_current))
+#             str_state = [str(dxl_io.get_present_position([num1])[0]),str(dxl_io.get_outputTorque([num1])[0])]
+#             state_file.write(",".join(str_state) + "\n")
+
 # time.sleep(1)
-
+# dxl_io.set_max_torque({num1:1024})
 setTraj1(num1, 5000, [2048.0, 0.0, 0.0])
-
+setTorque1(num1,5000, [40.0,0.0,0.0]) 
 print ("Setting mode and tracking :")
 
-dxl_io.set_mode_dynaban({num1:3}) 
+dxl_io.set_mode_dynaban({num1:3})
 
-time_start = time.time()
 setTraj2(num1, 20000, [2048.0, 512.0, 0.0])
-dxl_io.set_copy_next_buffer({num1:1})
-time_current = time.time()
-while (time.time()-time_current) <= 2:
-#             print((time.time()-time_current))
-            str_state = [str(dxl_io.get_present_position([num1])[0]),str(dxl_io.get_outputTorque([num1])[0])]
-            state_file.write(",".join(str_state) + "\n")
-            time.sleep(0.025)
+setTorque2(num1,20000, [40.0,0.0,0.0]) 
 
-setTraj2(num1, 20000, [3072.0, -512.0, 0.0])
 dxl_io.set_copy_next_buffer({num1:1})
 time_current = time.time()
-while (time.time()-time_current) <= 2:
-#             print((time.time()-time_current))
-            str_state = [str(dxl_io.get_present_position([num1])[0]),str(dxl_io.get_outputTorque([num1])[0])]
-            state_file.write(",".join(str_state) + "\n")
-            time.sleep(0.025)
-        
-        
-setTraj2(num1, 20000, [2048.0, -512.0, 0.0])
-dxl_io.set_copy_next_buffer({num1:1})
-time_current = time.time()
+
 while (time.time()-time_current) <= 3:
-#             print((time.time()-time_current))
-            str_state = [str(dxl_io.get_present_position([num1])[0]),str(dxl_io.get_outputTorque([num1])[0])]
-            state_file.write(",".join(str_state) + "\n")
-            time.sleep(0.025)
-time_end = time.time()
-print(time_end-time_start)
+    print(dxl_io.get_outputTorque([num1])[0])
+    str_state = [str(dxl_io.get_present_position([num1])[0]),str(dxl_io.get_outputTorque([num1])[0])]
+    state_file.write(",".join(str_state) + "\n")
+
+# time_start = time.time()
+# setTraj2(num1, 20000, [2048.0, 512.0, 0.0])
+# dxl_io.set_copy_next_buffer({num1:1})
+# time_current = time.time()
+# while (time.time()-time_current) <= 2:
+# #             print((time.time()-time_current))
+#             str_state = [str(dxl_io.get_present_position([num1])[0]),str(dxl_io.get_outputTorque([num1])[0])]
+#             state_file.write(",".join(str_state) + "\n")
+
+# setTraj2(num1, 20000, [3072.0, -512.0, 0.0])
+# dxl_io.set_copy_next_buffer({num1:1})
+# time_current = time.time()
+# while (time.time()-time_current) <= 2:
+# #             print((time.time()-time_current))
+#             str_state = [str(dxl_io.get_present_position([num1])[0]),str(dxl_io.get_outputTorque([num1])[0])]
+#             state_file.write(",".join(str_state) + "\n")
+        
+        
+# setTraj2(num1, 20000, [2048.0, -512.0, 0.0])
+# dxl_io.set_copy_next_buffer({num1:1})
+# time_current = time.time()
+# while (time.time()-time_current) <= 3:
+# #             print((time.time()-time_current))
+#             str_state = [str(dxl_io.get_present_position([num1])[0]),str(dxl_io.get_outputTorque([num1])[0])]
+#             state_file.write(",".join(str_state) + "\n")
+# time_end = time.time()
+# print(time_end-time_start)
       
 
 

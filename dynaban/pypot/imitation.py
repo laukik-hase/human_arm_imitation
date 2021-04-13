@@ -12,11 +12,13 @@ import numpy as np
 from scipy.optimize import curve_fit
 import csv
 import pypot.dynamixel
+import sys
 
-num1 = 2
-num2 = 4
+motor_id = [2,3]
 
 ports = pypot.dynamixel.get_available_ports()
+state_file = open("path.csv", "w")
+
 
 if not ports:
     raise IOError('no port found!')
@@ -26,13 +28,12 @@ print('ports found', ports)
 print('connecting on the first available port:', ports[0])
 dxl_io = pypot.dynamixel.DxlIO(ports[0])
 
-
 def setTraj1(id, duration, coeffs):
     errorCounter = 0
     delay = 0.001
     while True:
         try:
-            dxl_io.set_traj1_size({id: 4})
+            dxl_io.set_traj1_size({id: 5})
             time.sleep(delay)
             dxl_io.set_duration1({id: duration})
             time.sleep(delay)
@@ -44,8 +45,8 @@ def setTraj1(id, duration, coeffs):
             time.sleep(delay)
             dxl_io.set_a3_traj1({id: coeffs[3]})
             time.sleep(delay)
-
-
+            dxl_io.set_a4_traj1({id: coeffs[4]})
+            time.sleep(delay)
 
             break
         except:
@@ -61,7 +62,7 @@ def setTraj2(id, duration, coeffs):
 
     while True:
         try:
-            dxl_io.set_traj2_size({id: 4})
+            dxl_io.set_traj2_size({id: 5})
             time.sleep(delay)
             dxl_io.set_duration2({id: duration})
             time.sleep(delay)
@@ -73,8 +74,8 @@ def setTraj2(id, duration, coeffs):
             time.sleep(delay)
             dxl_io.set_a3_traj2({id: coeffs[3]})
             time.sleep(delay)
-
-
+            dxl_io.set_a4_traj2({id: coeffs[4]})
+            time.sleep(delay)
 
             break
         except:
@@ -125,9 +126,8 @@ def setTorque2(id, duration, coeffs):
             errorCounter = errorCounter + 1
             # print "Nope :/"
             pass
-
-def func2(t, c, d, e, f):
-    return  c*pow(t, 3) + d*pow(t, 2) + e*t + f
+def eval_poly(t, a0, a1, a2, a3, a4):
+    return a0*pow(t, 4) + a1*pow(t, 3) + a2*pow(t, 2) + a3*t + a4
 
 def read_file(inp):
     
@@ -167,78 +167,67 @@ def read_file(inp):
     return res ,res1
     # return res ,res1 ,res2 ,res3
 # main Program
-
-# file_name = input('Enter csv file for motor: ')
-angle1, angle2 = read_file('Ps_Pe_new.csv')
+file_name = input('Enter csv file for motor: ')
+angle1, angle2 = read_file(file_name)
 # angle1, angle2, angle3, angle4 = read_file(file_name)
 
+all_coeff = {}
 coeff1 = {}
 pcov1 = {}
-count1 = 0
-
-for value in angle1:
-    coeff1[count1], pcov1[count1] = curve_fit(func2, np.linspace(0,0.5,len(value)),value)
-#     print(coeff1[count1],count1)
-    count1 = count1 + 1
-
 coeff2 = {}
 pcov2 = {}
-count2 = 0
+coeff3 = {}
+pcov3 = {}
+coeff4 = {}
+pcov4 = {}
+count = 0
 
-for value in angle2:
-    coeff2[count2], pcov2[count2] = curve_fit(func2, np.linspace(0,0.5,len(value)),value)
-#     print(coeff2[count2],count2)
-    count2 = count2 + 1
+for value in angle1:
+    coeff1[count], pcov1[count] = curve_fit(func2, np.linspace(0,0.5,len(value)),value)
+    coeff2[count], pcov2[count] = curve_fit(func2, np.linspace(0,0.5,len(value)),value)
+    #coeff3[count], pcov3[count] = curve_fit(func2, np.linspace(0,0.5,len(value)),value)
+    #coeff4[count], pcov4[count] = curve_fit(func2, np.linspace(0,0.5,len(value)),value)
+    count = count + 1
+all_coeff[0] = coeff1
+all_coeff[1] = coeff2
+#all_coeff[2] = coeff3
+#all_coeff[3] = coeff4
+print(all_coeff[0][0])
 
-
-print ("Test with PID only:")
-dxl_io.set_mode_dynaban({num1:0})
-time.sleep(0.1)
-dxl_io.enable_torque({num1:1})
-time.sleep(0.1)
-# dxl_io.enable_torque({1:1})
-time.sleep(0.1)
-dxl_io.set_mode_dynaban({num2:0})
-time.sleep(0.1)
-dxl_io.enable_torque({num2:1})
-time.sleep(0.1)
-
-
-dxl_io.set_goal_position({num1:-75})
-dxl_io.set_goal_position({num2:0})
-time.sleep(2)
-dxl_io.set_pid_gain({num1:[1,0,0]})
-time.sleep(0.1)
-dxl_io.set_pid_gain({num2:[2,0,0]})
-time.sleep(0.1)
-# print ("Setting traj1 :")
-
-# print(dxl_io.get_goal_position([num]))
-
-# setTraj1(num1,5000, [2048.0,0.0,0.0,0.0,0.0,0.0,0.0])
-# dxl_io.set_mode_dynaban({num1:3}) 
-# time.sleep(1)
-# print(dxl_io.get_goal_position([num]))
-
-for i in range(0,len(coeff1)):
-    if i == 0:
-        setTraj1(num1,5000, [coeff1[i][3],coeff1[i][2],coeff1[i][1],coeff1[i][0]])
-        setTorque1(num1,5000, [0.512,0.0,0.0])
-        setTraj1(num2,5000, [coeff2[i][3],coeff2[i][2],coeff2[i][1],coeff2[i][0]])
-        setTorque1(num2,5000, [0.512,0.0,0.0])           
-        dxl_io.set_mode_dynaban({num2:3,num1:3}) 
-#         time.sleep(1)
-    else:
-        setTraj2(num1,5000, [coeff1[i][3],coeff1[i][2],coeff1[i][1],coeff1[i][0]])
-        if i > 10
-        setTorque2(num1,5000, [0.512,0.512,0.0])
-        setTraj2(num2,5000, [coeff2[i][3],coeff2[i][2],coeff2[i][1],coeff2[i][0]])
-        setTorque2(num2,5000, [0.512,0.512,0.0])
-        dxl_io.set_copy_next_buffer({num2:1,num1:1})
+# TODO : Put all delays in one variable
+def init (id)
+    for motor in id:
+        dxl_io.set_mode_dynaban({motor:0})
+        time.sleep(0.1)
+        dxl_io.enable_torque({motor:1})
+        time.sleep(0.1)
+        dxl_io.set_goal_position({motor:(all_coeff[id.index(i)][0][3]*360/4096-180)})
         time.sleep(0.5)
+        dxl_io.set_pid_gain({motor:[1,0,0]})
+        time.sleep(0.1)
 
+init(motor_id)
 
+for traj in range(0,len(coeff1)):
+    if traj == 0:
+        for joints in range(len(motor_id)):
+            setTraj1(motor_id[joints],5000, [all_coeff[joints][traj][4],all_coeff[j][traj][3],all_coeff[joints][traj][2],all_coeff[joints][traj][1],all_coeff[joints][traj][0]])
+        dxl_io.set_mode_dynaban({2:3,3:3}) 
+        
+    else:
+        for joints in range(len(motor_id)):
+            setTraj2(motor_id[joints],5000, [all_coeff[joints][traj][4],all_coeff[j][traj][3],all_coeff[joints][traj][2],all_coeff[joints][traj][1],all_coeff[joints][traj][0]])
+        
+        dxl_io.set_copy_next_buffer({2:1,3:1})
+        
+        time_current = time.time()
+        while (time.time()-time_current) <= 0.5:
+            for joints in range(len(motor_id)):
+                str_state.extend[(str(dxl_io.get_present_position([joints])[0]),str(dxl_io.get_outputTorque([joints])[0]))] 
 
+            state_file.write(",".join(str_state) + "\n")
+
+time_elapsed = (time.clock() - time_start)
 
 
 

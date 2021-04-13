@@ -79,37 +79,7 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        elbow_bracket:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        elbow_motor:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        forearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        shoulder_bracket:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        shoulder_pitch_motor:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         shoulder_yaw_motor:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        wrist_bracket:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -124,7 +94,7 @@ Visualization Manager:
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: elbow_motor
+    Fixed Frame: base_link
     Frame Rate: 30
   Name: root
   Tools:
@@ -148,7 +118,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.8031949996948242
+      Distance: 1.5076264142990112
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -163,10 +133,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.2803970277309418
+      Pitch: 0.41539642214775085
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.5404067039489746
+      Yaw: 3.400416851043701
     Saved: ~
 Window Geometry:
   Displays:
