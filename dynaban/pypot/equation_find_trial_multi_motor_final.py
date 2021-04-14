@@ -20,7 +20,6 @@ def read_file(inp):
     # res2, t2 =[], []
     # res3, t3 =[], []
     k = 1
-
     for element in data:
         if element[0] <= k * 500:
             t.append(element[1])
@@ -42,32 +41,48 @@ def read_file(inp):
             # t2.append(element[3])
             # t3.append(element[4])
         cp.append(element[0])
+    res.append(t)
+    res1.append(t1)
     return res ,res1
     # return res ,res1 ,res2 ,res3
 # main Program
 file_name = input('Enter csv file for motor: ')
 angle1, angle2 = read_file(file_name)
-# angle1, angle2, angle3, angle4 = read_file(file_name)
 
+# angle1, angle2, angle3, angle4 = read_file(file_name)
+print(angle2)
 all_coeff = {}
 coeff1 = {}
 pcov1 = {}
-coeff2 = {}
-pcov2 = {}
-coeff3 = {}
-pcov3 = {}
-coeff4 = {}
-pcov4 = {}
 count = 0
-
 for value in angle1:
     coeff1[count], pcov1[count] = curve_fit(func2, np.linspace(0,0.5,len(value)),value)
-    coeff2[count], pcov2[count] = curve_fit(func2, np.linspace(0,0.5,len(value)),value)
-    #coeff3[count], pcov3[count] = curve_fit(func2, np.linspace(0,0.5,len(value)),value)
-    #coeff4[count], pcov4[count] = curve_fit(func2, np.linspace(0,0.5,len(value)),value)
     count = count + 1
+
+coeff2 = {}
+pcov2 = {}
+count1 = 0
+for value1 in angle2:
+    coeff2[count1], pcov2[count1] = curve_fit(func2, np.linspace(0,0.5,len(value1)),value1)
+    count1 = count1 + 1
+
+# coeff3 = {}
+# pcov3 = {}
+# count2 = 0
+# for value2 in angle3:
+#     coeff3[count2], pcov3[count2] = curve_fit(func2, np.linspace(0,0.5,len(value2)),value2)
+#     count2 = count2 + 1
+
+# coeff4 = {}
+# pcov4 = {}
+# count3 = 0
+# for value3 in angle4:
+#     coeff4[count3], pcov4[count3] = curve_fit(func2, np.linspace(0,0.5,len(value3)),value3)
+#     count3 = count3 + 1
+
 all_coeff[0] = coeff1
 all_coeff[1] = coeff2
-#all_coeff[2] = coeff3
-#all_coeff[3] = coeff4
-print(all_coeff[0][0])
+# all_coeff[2] = coeff3
+# all_coeff[3] = coeff4
+
+print(all_coeff[0][0],all_coeff[1][0])
