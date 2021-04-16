@@ -21,7 +21,7 @@ DXL_DICT_1      = dict(zip(motor_id, [3]*size))
 
 
 ports = pypot.dynamixel.get_available_ports()
-state_file = open("ps_pe_with_torque_slow_1sec.csv", "w")
+state_file = open("ps_pe_with_torque_1sec.csv", "w")
 str_state = []
 
 if not ports:
@@ -186,7 +186,7 @@ def read_file(inp):
     return res,res1,res2,res3 
 # main Program
 # file_name = input('Enter csv file for motor: ')
-angle1, angle2, torque1, torque2 = read_file('Ps_Pe_slow.csv')
+angle1, angle2, torque1, torque2 = read_file('Ps_Pe_new (1).csv')
 
 # angle1, angle2 = read_file('Ps_Pe_new (1).csv')
 # print(angle2)

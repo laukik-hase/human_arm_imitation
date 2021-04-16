@@ -9,6 +9,7 @@
 <xacro:property name="MXWidth" value="0.0402"/>
 <xacro:property name="MXDepth" value="0.041"/>
 
+
 <xacro:property name="MXLengthAxisShort" value="0.013"/>
 <xacro:property name="MXLengthAxisLong" value="0.0481"/>
 
@@ -28,14 +29,31 @@
 
 <xacro:property name="MXBracketCorrection" value="0.002"/>
 
+<!-- http://gazebosim.org/tutorials?tut=inertia&cat=build_robot#Rescalingthemomentofinertiavalues -->
+<xacro:property name="MXMass" value="0.165"/>
+<!-- <xacro:property name="MXVolume" value="0.000070668734375"/> -->
+
+<xacro:property name="Link1Mass" value="0.265"/>
+<!-- <xacro:property name="Link1Volume" value="0.000231393781250"/> -->
+
+<xacro:property name="Link2Mass" value="0.265"/>
+<!-- <xacro:property name="Link2Volume" value="0.000173506343750"/> -->
+
+
 
 <!-- MACROS -->
 
 <xacro:macro name="MXInertial" params="trans rpy">
   <inertial>
     <origin xyz="${trans}" rpy="${rpy}" />
-    <mass value="0.140" />
-    <inertia ixx="0.000050799110" ixy="0.0" ixz="0.0" iyy="0.00002857215" iyz="0.00000051457" izz="0.000043394" />
+    <mass value="${MXMass}" />
+    <inertia 
+      ixx="6.65123572902532E-05" 
+      ixy="-4.54345384616915E-11" 
+      ixz="-5.15255173621468E-12" 
+      iyy="5.68182433930847E-05" 
+      iyz="-6.73804871717713E-07" 
+      izz="3.74108886112339E-05"/>
   </inertial>
 </xacro:macro>
 
@@ -43,7 +61,7 @@
   <visual>
     <origin xyz="${trans}" rpy="${rpy}"/>
     <geometry>
-      <mesh filename="package://arm_imitation/meshes/mx-64.stl" scale="1 1 1"/>
+      <mesh filename="package://arm_imitation/meshes/mx-64.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="white"/>         
   </visual>
@@ -53,46 +71,22 @@
     <collision>
       <origin xyz="${trans}" rpy="${rpy}"/>
       <geometry>
-        <mesh filename="package://arm_imitation/meshes/mx-64.stl" scale="1 1 1"/>
+        <mesh filename="package://arm_imitation/meshes/mx-64.stl" scale="0.001 0.001 0.001"/>
       </geometry>    
     </collision> 
 </xacro:macro>
 
-
-
-
-<xacro:macro name="LinkInertial" params="trans rpy">
-  <inertial>
-    <origin xyz="${trans}" rpy="${rpy}"/>
-    <mass value="${0.005*LinkLength}" />
-    <inertia ixx="0.000050799110" ixy="0.0" ixz="0.0" iyy="0.00002857215" iyz="0.00000051457" izz="0.000043394"/>
-  </inertial>
-</xacro:macro>
-
-<xacro:macro name="LinkVisual" params="trans rpy">
-  <visual>
-    <origin xyz="${trans}" rpy="${rpy}"/>
-    <geometry>
-      <box size="0.04 0.04 ${LinkLength}"/>
-    </geometry>
-    <material name="white"/>       
-  </visual>
-</xacro:macro>
-
-<xacro:macro name="LinkCollision" params="trans rpy">
-    <collision>
-      <origin xyz="${trans}" rpy="${rpy}"/>
-      <geometry>
-        <box size="0.04 0.04 ${LinkLength}"/>
-      </geometry>    
-    </collision> 
-</xacro:macro> 
-<!--  -->
 <xacro:macro name="Link1Inertial" params="trans rpy">
   <inertial>
     <origin xyz="${trans}" rpy="${rpy}"/>
-    <mass value="0.265" />
-    <inertia ixx="0.000050799110" ixy="0.0" ixz="0.0" iyy="0.00002857215" iyz="0.00000051457" izz="0.000043394"/>
+    <mass value="${Link1Mass}" />
+    <inertia 
+      ixx="0.000608361426086" 
+      ixy="7.77278472820011E-11" 
+      ixz="2.27900791642819E-11" 
+      iyy="6.93532385616405E-05" 
+      iyz="7.00240819830694E-08" 
+      izz="0.000605959073862"/>
   </inertial>
 </xacro:macro>
 
@@ -100,7 +94,7 @@
   <visual>
     <origin xyz="${trans}" rpy="${rpy}"/>
     <geometry>
-      <mesh filename="package://arm_imitation/meshes/link1.stl" scale="1 1 1"/>
+      <mesh filename="package://arm_imitation/meshes/link1.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="white"/>       
   </visual>
@@ -110,7 +104,7 @@
     <collision>
       <origin xyz="${trans}" rpy="${rpy}"/>
       <geometry>
-      <mesh filename="package://arm_imitation/meshes/link1.stl" scale="1 1 1"/>
+      <mesh filename="package://arm_imitation/meshes/link1.stl" scale="0.001 0.001 0.001"/>
     </geometry>    
     </collision> 
 </xacro:macro> 
@@ -118,8 +112,14 @@
 <xacro:macro name="Link2Inertial" params="trans rpy">
   <inertial>
     <origin xyz="${trans}" rpy="${rpy}"/>
-    <mass value="0.265" />
-    <inertia ixx="0.000050799110" ixy="0.0" ixz="0.0" iyy="0.00002857215" iyz="0.00000051457" izz="0.000043394"/>
+    <mass value="${Link2Mass}" />
+    <inertia 
+      ixx="0.000353833500666" 
+      ixy="-9.91181241544464E-11"
+      ixz="2.17719851471636E-11" 
+      iyy="7.68817830247818E-05" 
+      iyz="-6.50168183616403E-07" 
+      izz="0.000363033715751"/>
   </inertial>
 </xacro:macro>
 
@@ -127,7 +127,7 @@
   <visual>
     <origin xyz="${trans}" rpy="${rpy}"/>
     <geometry>
-      <mesh filename="package://arm_imitation/meshes/link2.stl" scale="1 1 1"/>
+      <mesh filename="package://arm_imitation/meshes/link2.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="white"/>       
   </visual>
@@ -137,7 +137,7 @@
     <collision>
       <origin xyz="${trans}" rpy="${rpy}"/>
       <geometry>
-      <mesh filename="package://arm_imitation/meshes/link2.stl" scale="1 1 1"/>
+      <mesh filename="package://arm_imitation/meshes/link2.stl" scale="0.001 0.001 0.001"/>
     </geometry>    
     </collision> 
 </xacro:macro> 
@@ -207,8 +207,8 @@
   <!-- <xacro:FxdJoint id="base_joint" trans="0 ${LinkWidth/2} 0.5624" rpy="1.57 0 3.14" parent="base_link" child="shoulder_yaw_motor"/> -->
   <xacro:RevJoint id="shoulder_pitch" trans="0 ${MXDepth/2} 0" rpy="-1.57 -1.57 0" parent="shoulder_pitch_motor" child="shoulder_roll_motor" axis="0 0 1" l="-3.14" u="3.14" v="1.0"/>
   <xacro:RevJoint id="shoulder_roll" trans="0 ${MXLengthAxisLong + MXDepth/2} ${MXLengthAxisLong}" rpy="1.57 1.57 3.14" parent="shoulder_roll_motor" child="shoulder_yaw_motor" axis="0 0 -1" l="-3.14" u="3.14" v="1.0"/>
-  <xacro:RevJoint id="shoulder_yaw" trans="0 0 0" rpy="1.57 3.14 -1.57" parent="shoulder_yaw_motor" child="link_1" axis="-1 0 0" l="-1.57" u="1.57" v="1.0"/>
-  <xacro:RevJoint id="elbow_pitch" trans="0 -${MXBracketLength + LinkLength + MXLengthAxisLong} 0" rpy="0 0 0" parent="link_1" child="link_2" axis="0 0 1" l="-1.57" u="1.57" v="1.0"/>
+  <xacro:RevJoint id="shoulder_yaw" trans="0 0 0" rpy="1.57 0 -1.57" parent="shoulder_yaw_motor" child="link_1" axis="1 0 0" l="-1.57" u="1.57" v="1.0"/>
+  <xacro:RevJoint id="elbow_pitch" trans="0 ${MXBracketLength + LinkLength + MXLengthAxisLong} 0" rpy="0 -1.57 0" parent="link_1" child="link_2" axis="1 0 0" l="-1.57" u="1.57" v="1.0"/>
   
   <!-- <xacro:RevJoint id="shoulder_yaw" trans="0 ${MXLengthAxisLong} 0" rpy="-1.57 1.57 1.57" parent="shoulder_pitch_motor" child="link_1" axis="-1 0 0" l="-1.57" u="1.57" v="1.0"/> -->
   <!-- <xacro:RevJoint id="elbow_pitch" trans="0 -${MXBracketLength + LinkLength + MXLengthAxisLong} 0" rpy="0 0 0" parent="link_1" child="link_2" axis="0 0 1" l="-1.57" u="1.57" v="1.0"/> -->
