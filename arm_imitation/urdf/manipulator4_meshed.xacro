@@ -26,6 +26,8 @@
 
 <xacro:property name="AXBracketLength" value="0.052"/>
 
+<xacro:property name="MXBracketCorrection" value="0.002"/>
+
 
 <!-- MACROS -->
 
@@ -56,59 +58,8 @@
     </collision> 
 </xacro:macro>
 
-<xacro:macro name="BracketInertial" params="trans rpy">
-  <inertial>
-    <origin xyz="${trans}" rpy="${rpy}"/>
-    <mass value="0.00712" />
-    <inertia ixx="0.00000174511" iyy="0.00000379922" ixz="0.0" ixy="0.0" iyz="0.0" izz="0.00000357521" />
-  </inertial>
-</xacro:macro>
 
-<xacro:macro name="BracketVisual" params="trans rpy">
-  <visual>
-    <origin xyz="${trans}" rpy="${rpy}"/>
-    <geometry>
-      <mesh filename="package://mobile_manipulator/meshes/FR05-H101K.stl" scale="0.001 0.001 0.001" />
-    </geometry>
-    <material name="white"/>         
-  </visual>
-</xacro:macro>
 
-<xacro:macro name="BracketCollision" params="trans rpy">
-    <collision>
-      <origin xyz="${trans}" rpy="${rpy}"/>
-      <geometry>
-        <mesh filename="package://mobile_manipulator/meshes/FR05-H101K.stl" scale="0.001 0.001 0.001"/>
-      </geometry>    
-    </collision> 
-</xacro:macro>  
-
-<xacro:macro name="AxBracketInertial" params="trans rpy">
-  <inertial>
-    <origin xyz="${trans}" rpy="${rpy}"/>
-    <mass value="0.00712" />
-    <inertia ixx="0.00000174511" iyy="0.00000379922" ixz="0.0" ixy="0.0" iyz="0.0" izz="0.00000357521" />
-  </inertial>
-</xacro:macro>
-
-<xacro:macro name="AxBracketVisual" params="trans rpy">
-  <visual>
-    <origin xyz="${trans}" rpy="${rpy}"/>
-    <geometry>
-      <mesh filename="package://mobile_manipulator/meshes/F4.stl" scale="0.001 0.001 0.001" />
-    </geometry>
-    <material name="white"/>         
-  </visual>
-</xacro:macro>
-
-<xacro:macro name="AxBracketCollision" params="trans rpy">
-    <collision>
-      <origin xyz="${trans}" rpy="${rpy}"/>
-      <geometry>
-        <mesh filename="package://mobile_manipulator/meshes/F4.stl" scale="0.001 0.001 0.001"/>
-      </geometry>    
-    </collision> 
-</xacro:macro>  
 
 <xacro:macro name="LinkInertial" params="trans rpy">
   <inertial>
@@ -134,6 +85,60 @@
       <geometry>
         <box size="0.04 0.04 ${LinkLength}"/>
       </geometry>    
+    </collision> 
+</xacro:macro> 
+<!--  -->
+<xacro:macro name="Link1Inertial" params="trans rpy">
+  <inertial>
+    <origin xyz="${trans}" rpy="${rpy}"/>
+    <mass value="0.265" />
+    <inertia ixx="0.000050799110" ixy="0.0" ixz="0.0" iyy="0.00002857215" iyz="0.00000051457" izz="0.000043394"/>
+  </inertial>
+</xacro:macro>
+
+<xacro:macro name="Link1Visual" params="trans rpy">
+  <visual>
+    <origin xyz="${trans}" rpy="${rpy}"/>
+    <geometry>
+      <mesh filename="package://arm_imitation/meshes/link1.stl" scale="1 1 1"/>
+    </geometry>
+    <material name="white"/>       
+  </visual>
+</xacro:macro>
+
+<xacro:macro name="Link1Collision" params="trans rpy">
+    <collision>
+      <origin xyz="${trans}" rpy="${rpy}"/>
+      <geometry>
+      <mesh filename="package://arm_imitation/meshes/link1.stl" scale="1 1 1"/>
+    </geometry>    
+    </collision> 
+</xacro:macro> 
+
+<xacro:macro name="Link2Inertial" params="trans rpy">
+  <inertial>
+    <origin xyz="${trans}" rpy="${rpy}"/>
+    <mass value="0.265" />
+    <inertia ixx="0.000050799110" ixy="0.0" ixz="0.0" iyy="0.00002857215" iyz="0.00000051457" izz="0.000043394"/>
+  </inertial>
+</xacro:macro>
+
+<xacro:macro name="Link2Visual" params="trans rpy">
+  <visual>
+    <origin xyz="${trans}" rpy="${rpy}"/>
+    <geometry>
+      <mesh filename="package://arm_imitation/meshes/link2.stl" scale="1 1 1"/>
+    </geometry>
+    <material name="white"/>       
+  </visual>
+</xacro:macro>
+
+<xacro:macro name="Link2Collision" params="trans rpy">
+    <collision>
+      <origin xyz="${trans}" rpy="${rpy}"/>
+      <geometry>
+      <mesh filename="package://arm_imitation/meshes/link2.stl" scale="1 1 1"/>
+    </geometry>    
     </collision> 
 </xacro:macro> 
 
@@ -180,54 +185,34 @@
     <xacro:MXVisual trans="0 ${MXLengthAxisLong} 0" rpy="0.0 0.0 0"/>
     <xacro:MXCollision trans="0 ${MXLengthAxisLong} 0" rpy="0 0 0"/>
   </link>
-
-  <link name="shoulder_bracket">
-    <xacro:BracketInertial trans="0 0 ${MXBracketLength}" rpy="0 0 0 "/>
-    <xacro:BracketVisual trans="0 0 ${MXBracketLength}" rpy="0 0 0 "/>
-    <xacro:BracketCollision trans="0 0 ${MXBracketLength}" rpy="0 0 0 "/>
-  </link>  
-
-  <link name="biscep">
-    <xacro:LinkInertial trans="0 0 ${LinkLength/2}" rpy="0 0 0" />
-    <xacro:LinkVisual trans="0 0 ${LinkLength/2}" rpy="0 0 0" />
-    <xacro:LinkCollision trans="0 0 ${LinkLength/2}" rpy="0 0 0" />
-  </link> 
-
-  <link name="elbow_motor">
-    <xacro:MXInertial trans="0 ${MXLengthAxisLong} 0" rpy="0 0 0"/>  
-    <xacro:MXVisual trans="0 ${MXLengthAxisLong} 0" rpy="0 0 0"/>
-    <xacro:MXCollision trans="0 ${MXLengthAxisLong} 0" rpy="0 0 0"/>
-  </link>
-
-  <link name="elbow_bracket">
-    <xacro:BracketInertial trans="0 0 ${MXBracketLength}" rpy="0 0 0"/>
-    <xacro:BracketVisual trans="0 0 ${MXBracketLength}" rpy="0 0 0"/>
-    <xacro:BracketCollision trans="0 0 ${MXBracketLength}" rpy="0 0 0"/>
-  </link> 
-
-  <link name="forearm">
-    <xacro:LinkInertial trans="0 0 ${LinkLength/2}" rpy="0 0 0" />
-    <xacro:LinkVisual trans="0 0 ${LinkLength/2}" rpy="0 0 0" />
-    <xacro:LinkCollision trans="0 0 ${LinkLength/2}" rpy="0 0 0" />
-  </link> 
   
-  <link name="wrist_bracket">
-    <xacro:AxBracketInertial trans="0 ${AXBracketLength} 0" rpy="0 0 0"/>
-    <xacro:AxBracketVisual trans="0 ${AXBracketLength} 0" rpy="0 0 0"/>
-    <xacro:AxBracketCollision trans="0 ${AXBracketLength} 0" rpy="0 0 0"/>
+  <link name="link_1">
+    <xacro:Link1Inertial trans="0 0 0" rpy="0 0 0"/>  
+    <xacro:Link1Visual trans="0 0 0" rpy="0.0 0.0 0"/>
+    <xacro:Link1Collision trans="0 0 0" rpy="0 0 0"/>
   </link>
+
+  <link name="link_2">
+    <xacro:Link2Inertial trans="0 0 0" rpy="0 0 0"/>  
+    <xacro:Link2Visual trans="0 0 0" rpy="0.0 0.0 0"/>
+    <xacro:Link2Collision trans="0 0 0" rpy="0 0 0"/>
+  </link>
+
+
+
   
  <!-- JOINTS -->
  <!-- the trans parameter present here is to toggle distance of current object with respect to next adjacent object i.e. its child-->
   <xacro:FxdJoint id="base_joint" trans="0 ${LinkWidth/2} 0.5624" rpy="1.57 0 3.14" parent="base_link" child="shoulder_yaw_motor"/>
-  <xacro:RevJoint id="shoulder_yaw" trans="0 0 ${MXDepth}" rpy="1.57 0 0" parent="shoulder_yaw_motor" child="shoulder_roll_motor" axis="0 1 0" l="-3.14" u="3.14" v="1.0"/>
+  <xacro:RevJoint id="shoulder_pitch" trans="0 0 ${MXDepth}" rpy="1.57 0 0" parent="shoulder_yaw_motor" child="shoulder_roll_motor" axis="0 1 0" l="-3.14" u="3.14" v="1.0"/>
   <xacro:RevJoint id="shoulder_roll" trans="0 ${MXLengthAxisLong} ${MXDepth/2}" rpy="1.57 0 1.57" parent="shoulder_roll_motor" child="shoulder_pitch_motor" axis="0 1 0" l="-3.14" u="3.14" v="1.0"/>
-  <xacro:RevJoint id="shoulder_pitch" trans="0 ${MXLengthAxisLong} 0" rpy="0 1.57 1.57" parent="shoulder_pitch_motor" child="shoulder_bracket" axis="1 0 0" l="-1.57" u="1.57" v="1.0"/>
+  <xacro:RevJoint id="shoulder_yaw" trans="0 ${MXLengthAxisLong} 0" rpy="-1.57 1.57 1.57" parent="shoulder_pitch_motor" child="link_1" axis="-1 0 0" l="-1.57" u="1.57" v="1.0"/>
+  <xacro:RevJoint id="elbow_pitch" trans="0 -${MXBracketLength + LinkLength + MXLengthAxisLong} 0" rpy="0 0 0" parent="link_1" child="link_2" axis="1 0 0" l="-1.57" u="1.57" v="1.0"/>
   <!-- axis="1 0 0" l="-1.57" u="1.57" v="1.0" -->
-  <xacro:FxdJoint id="biceps_start" trans="0 0 ${MXBracketLength}" rpy="0 0 3.14" parent="shoulder_bracket" child="biscep"/>
-  <xacro:FxdJoint id="biceps_end" trans="0 0 ${LinkLength}" rpy="1.57 0 3.14" parent="biscep" child="elbow_motor"/>
+  <!-- <xacro:FxdJoint id="biceps_start" trans="0 0 ${MXBracketLength}" rpy="0 0 3.14" parent="shoulder_bracket" child="biscep"/>
+  <xacro:FxdJoint id="biceps_end" trans="0 0 ${LinkLength}" rpy="1.57 0 1.57" parent="biscep" child="elbow_motor"/>
   <xacro:RevJoint id="elbow_pitch" trans="0 ${MXLengthAxisLong} 0" rpy="0 1.57 1.57" parent="elbow_motor" child="elbow_bracket" axis="1 0 0" l="-1.57" u="1.57" v="1.0"/>
   <xacro:FxdJoint id="forearm_start" trans="0 0 ${MXBracketLength}" rpy="0 0 3.14" parent="elbow_bracket" child="forearm"/>
-  <xacro:FxdJoint id="forearm_end" trans="0 0 ${LinkLength}" rpy="1.57 0 1.57" parent="forearm" child="wrist_bracket"/>
+  <xacro:FxdJoint id="forearm_end" trans="0 0 ${LinkLength}" rpy="1.57 0 1.57" parent="forearm" child="wrist_bracket"/> -->
 
 </robot>
