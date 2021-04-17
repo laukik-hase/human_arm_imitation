@@ -24,120 +24,120 @@ ports = pypot.dynamixel.get_available_ports()
 state_file = open("ps_pe_with_torque_slow_1sec_quartic.csv", "w")
 str_state = []
 
-if not ports:
-    raise IOError('no port found!')
+# if not ports:
+#     raise IOError('no port found!')
 
-print('ports found', ports)
+# print('ports found', ports)
 
-print('connecting on the first available port:', ports[0])
-dxl_io = pypot.dynamixel.DxlIO(ports[0])
+# print('connecting on the first available port:', ports[0])
+# dxl_io = pypot.dynamixel.DxlIO(ports[0])
 
-def setTraj1(id, duration, coeffs):
-    errorCounter = 0
-    delay = 0.001
-    while True:
-        try:
-            dxl_io.set_traj1_size({id: 5})
-            time.sleep(delay)
-            dxl_io.set_duration1({id: duration})
-            time.sleep(delay)
-            dxl_io.set_a0_traj1({id: coeffs[0]})
-            time.sleep(delay)
-            dxl_io.set_a1_traj1({id: coeffs[1]})
-            time.sleep(delay)
-            dxl_io.set_a2_traj1({id: coeffs[2]})
-            time.sleep(delay)
-            dxl_io.set_a3_traj1({id: coeffs[3]})
-            time.sleep(delay)
-            dxl_io.set_a4_traj1({id: coeffs[4]})
-            time.sleep(delay)
+# def setTraj1(id, duration, coeffs):
+#     errorCounter = 0
+#     delay = 0.001
+#     while True:
+#         try:
+#             dxl_io.set_traj1_size({id: 5})
+#             time.sleep(delay)
+#             dxl_io.set_duration1({id: duration})
+#             time.sleep(delay)
+#             dxl_io.set_a0_traj1({id: coeffs[0]})
+#             time.sleep(delay)
+#             dxl_io.set_a1_traj1({id: coeffs[1]})
+#             time.sleep(delay)
+#             dxl_io.set_a2_traj1({id: coeffs[2]})
+#             time.sleep(delay)
+#             dxl_io.set_a3_traj1({id: coeffs[3]})
+#             time.sleep(delay)
+#             dxl_io.set_a4_traj1({id: coeffs[4]})
+#             time.sleep(delay)
 
-            break
-        except:
-            errorCounter = errorCounter + 1
-            # print "Nope :/"
-            break
-            print("nb errors1 = ", errorCounter)
-
-
-def setTraj2(id, duration, coeffs):
-    errorCounter = 0
-    delay = 0.001
-
-    while True:
-        try:
-            dxl_io.set_traj2_size({id: 5})
-            time.sleep(delay)
-            dxl_io.set_duration2({id: duration})
-            time.sleep(delay)
-            dxl_io.set_a0_traj2({id: coeffs[0]})
-            time.sleep(delay)
-            dxl_io.set_a1_traj2({id: coeffs[1]})
-            time.sleep(delay)
-            dxl_io.set_a2_traj2({id: coeffs[2]})
-            time.sleep(delay)
-            dxl_io.set_a3_traj2({id: coeffs[3]})
-            time.sleep(delay)
-            dxl_io.set_a4_traj2({id: coeffs[4]})
-            time.sleep(delay)
-
-            break
-        except:
-            errorCounter = errorCounter + 1
-            print("nb errors2 = ", errorCounter)
-            break
+#             break
+#         except:
+#             errorCounter = errorCounter + 1
+#             # print "Nope :/"
+#             break
+#             print("nb errors1 = ", errorCounter)
 
 
-def setTorque1(id, duration, coeffs):
-    errorCounter = 0
-    delay = 0.001
-    while True:
-        try:
-            dxl_io.set_torque1_size({id: 5})
-            time.sleep(delay)
-            dxl_io.set_duration1({id: duration})
-            time.sleep(delay)
-            dxl_io.set_a0_torque1({id: coeffs[0]})
-            time.sleep(delay)
-            dxl_io.set_a1_torque1({id: coeffs[1]})
-            time.sleep(delay)
-            dxl_io.set_a2_torque1({id: coeffs[2]})
-            time.sleep(delay)
-            dxl_io.set_a3_torque1({id: coeffs[3]})
-            time.sleep(delay)
-            dxl_io.set_a4_torque1({id: coeffs[4]})
-            time.sleep(delay)
-            break
-        except:
-            errorCounter = errorCounter + 1
-            # print "Nope :/"
-            pass
-#         print "Nb errors : ", errorCounter
+# def setTraj2(id, duration, coeffs):
+#     errorCounter = 0
+#     delay = 0.001
 
-def setTorque2(id, duration, coeffs):
-    errorCounter = 0
-    delay = 0.001
-    while True:
-        try:
-            dxl_io.set_torque2_size({id: 5})
-            time.sleep(delay)
-            dxl_io.set_duration2({id: duration})
-            time.sleep(delay)
-            dxl_io.set_a0_torque2({id: coeffs[0]})
-            time.sleep(delay)
-            dxl_io.set_a1_torque2({id: coeffs[1]})
-            time.sleep(delay)
-            dxl_io.set_a2_torque2({id: coeffs[2]})
-            time.sleep(delay)
-            dxl_io.set_a3_torque2({id: coeffs[3]})
-            time.sleep(delay)
-            dxl_io.set_a4_torque2({id: coeffs[4]})
-            time.sleep(delay)
-            break
-        except:
-            errorCounter = errorCounter + 1
-            # print "Nope :/"
-            pass
+#     while True:
+#         try:
+#             dxl_io.set_traj2_size({id: 5})
+#             time.sleep(delay)
+#             dxl_io.set_duration2({id: duration})
+#             time.sleep(delay)
+#             dxl_io.set_a0_traj2({id: coeffs[0]})
+#             time.sleep(delay)
+#             dxl_io.set_a1_traj2({id: coeffs[1]})
+#             time.sleep(delay)
+#             dxl_io.set_a2_traj2({id: coeffs[2]})
+#             time.sleep(delay)
+#             dxl_io.set_a3_traj2({id: coeffs[3]})
+#             time.sleep(delay)
+#             dxl_io.set_a4_traj2({id: coeffs[4]})
+#             time.sleep(delay)
+
+#             break
+#         except:
+#             errorCounter = errorCounter + 1
+#             print("nb errors2 = ", errorCounter)
+#             break
+
+
+# def setTorque1(id, duration, coeffs):
+#     errorCounter = 0
+#     delay = 0.001
+#     while True:
+#         try:
+#             dxl_io.set_torque1_size({id: 5})
+#             time.sleep(delay)
+#             dxl_io.set_duration1({id: duration})
+#             time.sleep(delay)
+#             dxl_io.set_a0_torque1({id: coeffs[0]})
+#             time.sleep(delay)
+#             dxl_io.set_a1_torque1({id: coeffs[1]})
+#             time.sleep(delay)
+#             dxl_io.set_a2_torque1({id: coeffs[2]})
+#             time.sleep(delay)
+#             dxl_io.set_a3_torque1({id: coeffs[3]})
+#             time.sleep(delay)
+#             dxl_io.set_a4_torque1({id: coeffs[4]})
+#             time.sleep(delay)
+#             break
+#         except:
+#             errorCounter = errorCounter + 1
+#             # print "Nope :/"
+#             pass
+# #         print "Nb errors : ", errorCounter
+
+# def setTorque2(id, duration, coeffs):
+#     errorCounter = 0
+#     delay = 0.001
+#     while True:
+#         try:
+#             dxl_io.set_torque2_size({id: 5})
+#             time.sleep(delay)
+#             dxl_io.set_duration2({id: duration})
+#             time.sleep(delay)
+#             dxl_io.set_a0_torque2({id: coeffs[0]})
+#             time.sleep(delay)
+#             dxl_io.set_a1_torque2({id: coeffs[1]})
+#             time.sleep(delay)
+#             dxl_io.set_a2_torque2({id: coeffs[2]})
+#             time.sleep(delay)
+#             dxl_io.set_a3_torque2({id: coeffs[3]})
+#             time.sleep(delay)
+#             dxl_io.set_a4_torque2({id: coeffs[4]})
+#             time.sleep(delay)
+#             break
+#         except:
+#             errorCounter = errorCounter + 1
+#             # print "Nope :/"
+#             pass
 
 def eval_poly(t,a, b, c, d, e):
     return  a*pow(t, 4) + b*pow(t, 3) + c*pow(t, 2) + d*t + e
@@ -226,7 +226,7 @@ all_coeff[2] = coeff3
 all_coeff[3] = coeff4
 
 
-# print(all_coeff) 
+print(all_coeff) 
 
 # print(all_coeff[2][0][4])
 # print(all_coeff[3][0][4])
@@ -270,7 +270,7 @@ def init(id):
         dxl_io.set_pid_gain({id[joints]:[1,0,0]})
         time.sleep(0.1)
 
-init(motor_id)
+# init(motor_id)
 
 # for i in range(10):
 #     for j in range(2):
@@ -279,51 +279,51 @@ init(motor_id)
         
 #     state_file.write(",".join(str_state) + "\n")
 #     print(timer)
-condition = True
-for traj in range(0,len(coeff1)):
-    if traj == 0:
-        for joints in range(len(motor_id)):
-            joint_torque = joints + len(motor_id)
-#             print("hi")
-#             print(all_coeff[joint_torque][traj][4])
-            setTraj1(motor_id[joints],10000, [all_coeff[joints][traj][4],all_coeff[joints][traj][3],all_coeff[joints][traj][2],all_coeff[joints][traj][1],all_coeff[joints][traj][0]])
+# condition = True
+# for traj in range(0,len(coeff1)):
+#     if traj == 0:
+#         for joints in range(len(motor_id)):
+#             joint_torque = joints + len(motor_id)
+# #             print("hi")
+# #             print(all_coeff[joint_torque][traj][4])
+#             setTraj1(motor_id[joints],10000, [all_coeff[joints][traj][4],all_coeff[joints][traj][3],all_coeff[joints][traj][2],all_coeff[joints][traj][1],all_coeff[joints][traj][0]])
             
-            setTorque1(motor_id[joints],10000, [all_coeff[joint_torque][traj][4],all_coeff[joint_torque][traj][3],all_coeff[joint_torque][traj][2],all_coeff[joint_torque][traj][1],all_coeff[joint_torque][traj][0]])
+#             setTorque1(motor_id[joints],10000, [all_coeff[joint_torque][traj][4],all_coeff[joint_torque][traj][3],all_coeff[joint_torque][traj][2],all_coeff[joint_torque][traj][1],all_coeff[joint_torque][traj][0]])
             
-        dxl_io.set_mode_dynaban(DXL_DICT_3) 
+#         dxl_io.set_mode_dynaban(DXL_DICT_3) 
         
-    else:
-        for joints in range(len(motor_id)):
+#     else:
+#         for joints in range(len(motor_id)):
             
-            joint_torque = joints + len(motor_id)
-#             print(all_coeff[joint_torque][traj][0])
-            setTraj2(motor_id[joints],10000, [all_coeff[joints][traj][4],all_coeff[joints][traj][3],all_coeff[joints][traj][2],all_coeff[joints][traj][1],all_coeff[joints][traj][0]])
+#             joint_torque = joints + len(motor_id)
+# #             print(all_coeff[joint_torque][traj][0])
+#             setTraj2(motor_id[joints],10000, [all_coeff[joints][traj][4],all_coeff[joints][traj][3],all_coeff[joints][traj][2],all_coeff[joints][traj][1],all_coeff[joints][traj][0]])
             
-            setTorque2(motor_id[joints],10000, [all_coeff[joint_torque][traj][4],all_coeff[joint_torque][traj][3],all_coeff[joint_torque][traj][2],all_coeff[joint_torque][traj][1],all_coeff[joint_torque][traj][0]])
+#             setTorque2(motor_id[joints],10000, [all_coeff[joint_torque][traj][4],all_coeff[joint_torque][traj][3],all_coeff[joint_torque][traj][2],all_coeff[joint_torque][traj][1],all_coeff[joint_torque][traj][0]])
             
-        dxl_io.set_copy_next_buffer(DXL_DICT_1)
-#         time.sleep(1)
-        time_current = time.time()
+#         dxl_io.set_copy_next_buffer(DXL_DICT_1)
+# #         time.sleep(1)
+#         time_current = time.time()
         
-        while (time.time()-time_current) <= 1:
-            if condition == True:
-                temp = time.time()
-            else:
-                pass
-            condition = False
-            time_stamp = [str(time.time()-temp)]
-#             print(time_stamp)
-            str_state.extend(time_stamp)
+#         while (time.time()-time_current) <= 1:
+#             if condition == True:
+#                 temp = time.time()
+#             else:
+#                 pass
+#             condition = False
+#             time_stamp = [str(time.time()-temp)]
+# #             print(time_stamp)
+#             str_state.extend(time_stamp)
             
-            for joints in motor_id:
-                ang = [str(dxl_io.get_present_position([joints])[0]),str(dxl_io.get_outputTorque([joints])[0])]
-                print(ang)
+#             for joints in motor_id:
+#                 ang = [str(dxl_io.get_present_position([joints])[0]),str(dxl_io.get_outputTorque([joints])[0])]
+#                 print(ang)
 
-                str_state.extend(ang)
+#                 str_state.extend(ang)
             
-            state_file.write(",".join(str_state) + "\n")
-            str_state = []
-            time.sleep(0.0222)
+#             state_file.write(",".join(str_state) + "\n")
+#             str_state = []
+#             time.sleep(0.0222)
 
 
 
