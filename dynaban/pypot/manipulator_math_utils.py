@@ -3,6 +3,8 @@ import numpy as np
 from scipy.optimize import curve_fit
 import csv
 import sys
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
 
 def _get_polynomial(t, a3, a2, a1, a0):
     return a3*pow(t, 3) + a2*pow(t, 2) + a1*pow(t, 1) + a0*pow(t, 0)
@@ -36,22 +38,17 @@ class manipulator_math_utils:
         return _timestamps, _angles
 
 
-    def transform_angles(self, _angles, _transformations):
+    def angles_to_steps(self, _angles, _transformations):
         for j in range(self.JOINTS):
             _angles[j] = [int((_transformations[j][0]*_angles[j][i] +
                             _transformations[j][1])/360.0*4096) for i in range(len(_angles[j]))]
         return _angles
 
-
-    def moving_average(self, x, w):
-        return (np.convolve(x, np.ones(w), 'valid') / w)
-
-
     def padded_moving_average(self, _angles, _windowsize=5):
         # applying moving average on angles
-
         for i in range(self.JOINTS):
-            _angles[i] = self.moving_average(_angles[i], _windowsize).tolist()
+            
+            _angles[i] = (np.convolve(_angles[i], np.ones(_windowsize), 'valid') / _windowsize).tolist()
             _angles[i] = _angles[i] + [_angles[i][-1]]*(_windowsize-1)
             # WINDOWSIZE-1 values are less
             # so we append the last value repeated to fill the difference
@@ -71,10 +68,6 @@ class manipulator_math_utils:
             _timesplits.append(len(_timestamps))
 
         return _timesplits
-
-
-
-
 
     def get_coeffs_for_angle(self, _timestamps, _angles, _timesplits):
         _coeffs_angle = []
@@ -148,7 +141,7 @@ class manipulator_math_utils:
     # main Program
 
 
-    def calculate_coeffs(self, file_name, transformations, with_torque=True, moving_average_windowsize=5, spline=1):
+    def calculate_coeffs(self, file_name, transformations, angle_in_degrees=True, with_torque=True, moving_average_windowsize=5, spline=1):
         file_type = file_name.split(".")[-1]
         if(file_type == "csv"):
             data = self.read_csv_file(file_name, with_torque)
@@ -161,7 +154,7 @@ class manipulator_math_utils:
         if(with_torque): timestamps, angles, torques = data
         else: timestamps, angles = data
 
-        angles = self.transform_angles(angles, transformations)
+        if(angle_in_degrees): angles = self.angles_to_steps(angles, transformations)
         angles = self.padded_moving_average(angles, moving_average_windowsize)
         timesplits = self.get_timesplits(timestamps, spline)
 
@@ -175,6 +168,6 @@ class manipulator_math_utils:
 if __name__=="__main__":
     my_joints = 3
     my_manipulator_math_utils = manipulator_math_utils(my_joints)
-    my_transformations = [[1,180]]*my_joints
-    a, b = my_manipulator_math_utils.calculate_coeffs(sys.argv[1], my_transformations)
-    print(a,b)
+    my_transformations = [[1,0]]*my_joints
+    a, b = my_manipulator_math_utils.calculate_coeffs(sys.argv[1], my_transformations, False)
+    pp.pprint(a,b)
