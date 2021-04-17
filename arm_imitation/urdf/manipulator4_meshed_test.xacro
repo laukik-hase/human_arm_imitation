@@ -204,19 +204,15 @@
   
  <!-- JOINTS -->
  <!-- the trans parameter present here is to toggle distance of current object with respect to next adjacent object i.e. its child-->
-  <!-- <xacro:FxdJoint id="base_joint" trans="0 ${LinkWidth/2} 0.5624" rpy="1.57 0 3.14" parent="base_link" child="shoulder_yaw_motor"/> -->
-  <xacro:RevJoint id="shoulder_pitch" trans="0 ${MXDepth/2} 0" rpy="-1.57 -1.57 0" parent="shoulder_pitch_motor" child="shoulder_roll_motor" axis="0 0 1" l="-3.14" u="3.14" v="1.0"/>
+
+  <!-- <xacro:RevJoint id="shoulder_pitch" trans="0 ${MXDepth/2} 0" rpy="-1.57 -1.57 0" parent="shoulder_pitch_motor" child="shoulder_roll_motor" axis="0 0 1" l="-3.14" u="3.14" v="1.0"/>
+  <xacro:RevJoint id="shoulder_roll" trans="0 ${MXLengthAxisLong + MXDepth/2} ${MXLengthAxisLong}" rpy="1.57 1.57 3.14" parent="shoulder_roll_motor" child="shoulder_yaw_motor" axis="0 0 -1" l="-3.14" u="3.14" v="1.0"/>
+  <xacro:RevJoint id="shoulder_yaw" trans="0 0 0" rpy="1.57 0 -1.57" parent="shoulder_yaw_motor" child="link_1" axis="1 0 0" l="-1.57" u="1.57" v="1.0"/>
+  <xacro:RevJoint id="elbow_pitch" trans="0 ${MXBracketLength + LinkLength + MXLengthAxisLong} 0" rpy="0 -1.57 0" parent="link_1" child="link_2" axis="1 0 0" l="-1.57" u="1.57" v="1.0"/> -->
+
+  <xacro:RevJoint id="shoulder_pitch" trans="0 ${MXDepth/2} 0" rpy="-1.57 -1.57 0" parent="shoulder_pitch_motor" child="shoulder_roll_motor" axis="0 0 -1" l="-3.14" u="3.14" v="1.0"/>
   <xacro:RevJoint id="shoulder_roll" trans="0 ${MXLengthAxisLong + MXDepth/2} ${MXLengthAxisLong}" rpy="1.57 1.57 3.14" parent="shoulder_roll_motor" child="shoulder_yaw_motor" axis="0 0 -1" l="-3.14" u="3.14" v="1.0"/>
   <xacro:RevJoint id="shoulder_yaw" trans="0 0 0" rpy="1.57 0 -1.57" parent="shoulder_yaw_motor" child="link_1" axis="1 0 0" l="-1.57" u="1.57" v="1.0"/>
   <xacro:RevJoint id="elbow_pitch" trans="0 ${MXBracketLength + LinkLength + MXLengthAxisLong} 0" rpy="0 -1.57 0" parent="link_1" child="link_2" axis="1 0 0" l="-1.57" u="1.57" v="1.0"/>
-  
-  <!-- <xacro:RevJoint id="shoulder_yaw" trans="0 ${MXLengthAxisLong} 0" rpy="-1.57 1.57 1.57" parent="shoulder_pitch_motor" child="link_1" axis="-1 0 0" l="-1.57" u="1.57" v="1.0"/> -->
-  <!-- <xacro:RevJoint id="elbow_pitch" trans="0 -${MXBracketLength + LinkLength + MXLengthAxisLong} 0" rpy="0 0 0" parent="link_1" child="link_2" axis="0 0 1" l="-1.57" u="1.57" v="1.0"/> -->
-  <!-- axis="1 0 0" l="-1.57" u="1.57" v="1.0" -->
-  <!-- <xacro:FxdJoint id="biceps_start" trans="0 0 ${MXBracketLength}" rpy="0 0 3.14" parent="shoulder_bracket" child="biscep"/>
-  <xacro:FxdJoint id="biceps_end" trans="0 0 ${LinkLength}" rpy="1.57 0 1.57" parent="biscep" child="elbow_motor"/>
-  <xacro:RevJoint id="elbow_pitch" trans="0 ${MXLengthAxisLong} 0" rpy="0 1.57 1.57" parent="elbow_motor" child="elbow_bracket" axis="1 0 0" l="-1.57" u="1.57" v="1.0"/>
-  <xacro:FxdJoint id="forearm_start" trans="0 0 ${MXBracketLength}" rpy="0 0 3.14" parent="elbow_bracket" child="forearm"/>
-  <xacro:FxdJoint id="forearm_end" trans="0 0 ${LinkLength}" rpy="1.57 0 1.57" parent="forearm" child="wrist_bracket"/> -->
 
 </robot>

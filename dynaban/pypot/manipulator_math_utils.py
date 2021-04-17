@@ -141,7 +141,7 @@ class manipulator_math_utils:
     # main Program
 
 
-    def calculate_coeffs(self, file_name, transformations, angle_in_degrees=True, with_torque=True, moving_average_windowsize=5, spline=1):
+    def calculate_coeffs(self, file_name, angle_in_steps=True, transformations=[], with_torque=True, moving_average_windowsize=5, spline=1):
         file_type = file_name.split(".")[-1]
         if(file_type == "csv"):
             data = self.read_csv_file(file_name, with_torque)
@@ -154,7 +154,7 @@ class manipulator_math_utils:
         if(with_torque): timestamps, angles, torques = data
         else: timestamps, angles = data
 
-        if(angle_in_degrees): angles = self.angles_to_steps(angles, transformations)
+        if not angle_in_steps: angles = self.angles_to_steps(angles, transformations)
         angles = self.padded_moving_average(angles, moving_average_windowsize)
         timesplits = self.get_timesplits(timestamps, spline)
 
@@ -169,5 +169,5 @@ if __name__=="__main__":
     my_joints = 3
     my_manipulator_math_utils = manipulator_math_utils(my_joints)
     my_transformations = [[1,0]]*my_joints
-    a, b = my_manipulator_math_utils.calculate_coeffs(sys.argv[1], my_transformations, False)
+    a, b = my_manipulator_math_utils.calculate_coeffs(sys.argv[1])
     pp.pprint(a,b)
