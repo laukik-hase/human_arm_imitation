@@ -2,144 +2,128 @@
 
 static const char *TAG_BNO = "bno055_utils";
 
-BNO055_RETURN_FUNCTION_TYPE bno055_calib_accel(void)
+////////////////////////////////////////////////////////////////////////////
+
+BNO055_RETURN_FUNCTION_TYPE bno055_calib_accel(mpu_pos_t link)
 {
     // data array to hold accelerometer offsets
     struct bno055_accel_offset_t accel_bias;
-
     ESP_LOGI(TAG_BNO, "Accelerometer Calibration");
-    BNO055_delay_msek(2000);
 
-    // Set the operation mode
-    // In NDOF fusion mode, accel full scale is at +/- 4g, ODR is 62.5 Hz
-    IS_BNO_OK(bno055_set_operation_mode(BNO055_OPERATION_MODE_AMG));
-    IS_BNO_OK(bno055_set_accel_power_mode(BNO055_ACCEL_NORMAL));
-    IS_BNO_OK(bno055_set_accel_range(BNO055_ACCEL_RANGE_4G));
-    IS_BNO_OK(bno055_set_accel_bw(BNO055_ACCEL_BW_62_5HZ));
-
-    int cnt = 256;
+    // checking whether the accel is already calibrated
     struct bno055_accel_t accel_raw;
+    u8 accel_var = 0;
+    IS_BNO_OK(bno055_get_accel_calib_stat(&accel_var));
 
-    for (int i = 0; i < cnt; i++)
+    if (accel_var == 3)
     {
-        IS_BNO_OK(bno055_read_accel_xyz(&accel_raw));
+        IS_BNO_OK(bno055_read_accel_offset(&accel_bias));
+        ESP_LOGD(TAG_BNO, "Accel Already Calibrated!");
+        ESP_LOGD(TAG_BNO, "Acce Bias: X: %d | Y: %d | Z: %d", accel_bias.x, accel_bias.y, accel_bias.z);
 
-        accel_bias.x += accel_raw.x;
-        accel_bias.y += accel_raw.y;
-        accel_bias.z += accel_raw.z;
+        // Loading the Offsets in NVS
+        int k = (link - 1) * 9;
+        nvs_write_short(key[k], &accel_bias.x);
+        nvs_write_short(key[k + 1], &accel_bias.y);
+        nvs_write_short(key[k + 2], &accel_bias.z);
 
-        // At 62.5 Hz ODR, new accel data is available every 16 ms
-        BNO055_delay_msek(20);
+        return BNO055_SUCCESS;
     }
 
-    // Get average accel bias in mg
-    accel_bias.x /= cnt;
-    accel_bias.y /= cnt;
-    accel_bias.z /= cnt;
+    // Calibration procedure - Move BNO in 45 deg tilts around all the axes till calibration is done
+    // NOTE: This is the most tedious sensor to calculate
+    do
+    {
+        IS_BNO_OK(bno055_read_accel_xyz(&accel_raw));
+        IS_BNO_OK(bno055_get_accel_calib_stat(&accel_var));
+        ESP_LOGD(TAG_BNO, "Accel: X: %d | Y: %d | Z: %d | C: %d", accel_raw.x, accel_raw.y, accel_raw.z, accel_var);
+        BNO055_delay_msek(10);
+    } while (accel_var != 3);
 
-    // Remove gravity from the z-axis accelerometer bias calculation
-    if (accel_bias.z > 0L)
-        accel_bias.z -= 1000.;
-    else
-        accel_bias.z += 1000.;
-
-    IS_BNO_OK(bno055_write_accel_offset(&accel_bias));
-
-    ESP_LOGD(TAG_BNO, "Acce Bias: X: %d | Y: %d | Z: %d", accel_bias.x, accel_bias.y, accel_bias.z);
+    BNO055_delay_msek(1000);
+    ESP_LOGD(TAG_BNO, "Accel Calibrated!");
     return BNO055_SUCCESS;
 }
 
-BNO055_RETURN_FUNCTION_TYPE bno055_calib_gyro(void)
+BNO055_RETURN_FUNCTION_TYPE bno055_calib_gyro(mpu_pos_t link)
 {
     // data array to hold gyro offsets
     struct bno055_gyro_offset_t gyro_bias;
-
     ESP_LOGI(TAG_BNO, "Gyroscope Calibration");
-    BNO055_delay_msek(2000);
 
-    // Set the operation mode
-    // In NDOF fusion mode, gyro full scale is at +/- 2000dps, ODR is 32 Hz
-    IS_BNO_OK(bno055_set_operation_mode(BNO055_OPERATION_MODE_AMG));
-    IS_BNO_OK(bno055_set_gyro_power_mode(BNO055_GYRO_POWER_MODE_NORMAL));
-    IS_BNO_OK(bno055_set_gyro_range(BNO055_GYRO_RANGE_2000DPS));
-    IS_BNO_OK(bno055_set_gyro_bw(BNO055_GYRO_BW_32HZ));
-
-    int cnt = 256;
+    // checking whether the gyro is already calibrated
     struct bno055_gyro_t gyro_raw;
+    u8 gyro_var = 0;
+    IS_BNO_OK(bno055_get_gyro_calib_stat(&gyro_var));
 
-    for (int i = 0; i < cnt; i++)
+    if (gyro_var == 3)
     {
-        IS_BNO_OK(bno055_read_gyro_xyz(&gyro_raw));
+        IS_BNO_OK(bno055_read_gyro_offset(&gyro_bias));
+        ESP_LOGD(TAG_BNO, "Gyro Already Calibrated!");
+        ESP_LOGD(TAG_BNO, "Gyro Bias: X: %d | Y: %d | Z: %d", gyro_bias.x, gyro_bias.y, gyro_bias.z);
+        
+        // Loading the Offsets in NVS
+        int k = (link - 1) * 9;
+        nvs_write_short(key[k + 3], &gyro_bias.x);
+        nvs_write_short(key[k + 4], &gyro_bias.y);
+        nvs_write_short(key[k + 5], &gyro_bias.z);
 
-        gyro_bias.x += gyro_raw.x;
-        gyro_bias.y += gyro_raw.y;
-        gyro_bias.z += gyro_raw.z;
-
-        // At 32 Hz ODR, new accel data is available every 31 ms
-        BNO055_delay_msek(35);
+        return BNO055_SUCCESS;
     }
 
-    // get average gyro bias in counts
-    gyro_bias.x /= cnt;
-    gyro_bias.y /= cnt;
-    gyro_bias.z /= cnt;
+    // Calibration procedure - Keep BNO stable flat on the ground
+    do
+    {
+        IS_BNO_OK(bno055_read_gyro_xyz(&gyro_raw));
+        IS_BNO_OK(bno055_get_gyro_calib_stat(&gyro_var));
 
-    IS_BNO_OK(bno055_write_gyro_offset(&gyro_bias));
+        ESP_LOGD(TAG_BNO, "Gyro: X: %d | Y: %d | Z: %d | C: %d", gyro_raw.x, gyro_raw.y, gyro_raw.z, gyro_var);
+        BNO055_delay_msek(10);
+    } while (gyro_var != 3);
+
+    BNO055_delay_msek(1000);
+
+    IS_BNO_OK(bno055_read_gyro_offset(&gyro_bias));
+    ESP_LOGD(TAG_BNO, "Gyro Calibrated!");
     ESP_LOGD(TAG_BNO, "Gyro Bias: X: %d | Y: %d | Z: %d", gyro_bias.x, gyro_bias.y, gyro_bias.z);
     return BNO055_SUCCESS;
 }
 
-BNO055_RETURN_FUNCTION_TYPE bno055_calib_mag(void)
+BNO055_RETURN_FUNCTION_TYPE bno055_calib_mag(mpu_pos_t link)
 {
     // data array to hold compass offsets
     struct bno055_mag_offset_t mag_bias;
+    ESP_LOGI(TAG_BNO, "Compass Calibration");
 
-    float mag_temp[3] = {0, 0, 0};
-    float mag_max[3] = {0, 0, 0}, mag_min[3] = {0, 0, 0};
+    u8 mag_var = 0;
+    IS_BNO_OK(bno055_get_mag_calib_stat(&mag_var));
 
-    ESP_LOGI(TAG_BNO, "Mag Calibration: Wave device in a figure eight until done!");
-    BNO055_delay_msek(4000);
-
-    // In NDF fusion mode, mag data is in 16 LSB/microTesla, ODR is 20 Hz in forced mode
-    IS_BNO_OK(bno055_set_operation_mode(BNO055_OPERATION_MODE_AMG));
-    IS_BNO_OK(bno055_set_mag_power_mode(BNO055_MAG_POWER_MODE_FORCE_MODE));
-    IS_BNO_OK(bno055_set_mag_data_output_rate(BNO055_MAG_DATA_OUTRATE_20HZ));
-
-    struct bno055_mag_t mag_raw;
-    int cnt = 256;
-    for (int i = 0; i < cnt; i++)
+    if (mag_var == 3)
     {
-        IS_BNO_OK(bno055_read_mag_xyz(&mag_raw));
-
-        mag_temp[0] = mag_raw.x;
-        mag_temp[1] = mag_raw.y;
-        mag_temp[2] = mag_raw.z;
-
-        for (int j = 0; j < 3; j++)
-        {
-            if (i == 0)
-            {
-                mag_max[j] = mag_temp[j]; // Offsets may be large enough that mag_temp[i] may not be bipolar!
-                mag_min[j] = mag_temp[j]; // This prevents max or min being pinned to 0 if the values are unipolar...
-            }
-            else
-            {
-                if (mag_temp[j] > mag_max[j])
-                    mag_max[j] = mag_temp[j];
-                if (mag_temp[j] < mag_min[j])
-                    mag_min[j] = mag_temp[j];
-            }
-        }
-        BNO055_delay_msek(50); // at 20 Hz ODR, new mag data is available every 50 ms
+        IS_BNO_OK(bno055_read_mag_offset(&mag_bias));
+        ESP_LOGD(TAG_BNO, "Accel Already Calibrated!");
+        ESP_LOGD(TAG_BNO, "Mag Bias: X: %d | Y: %d | Z: %d", mag_bias.x, mag_bias.y, mag_bias.z);
+        
+        // Loading the Offsets in NVS
+        int k = (link - 1) * 9;
+        nvs_write_short(key[k + 6], &mag_bias.x);
+        nvs_write_short(key[k + 7], &mag_bias.y);
+        nvs_write_short(key[k + 8], &mag_bias.z);
+        
+        return BNO055_SUCCESS;
     }
 
-    mag_bias.x = (mag_max[0] + mag_min[0]) / 2; // get average x mag bias in counts
-    mag_bias.y = (mag_max[1] + mag_min[1]) / 2; // get average y mag bias in counts
-    mag_bias.z = (mag_max[2] + mag_min[2]) / 2; // get average z mag bias in counts
+    ESP_LOGI(TAG_BNO, "Compass Calibration: Move in figure 8 till done");
+    do
+    {
+        IS_BNO_OK(bno055_get_mag_calib_stat(&mag_var));
+        BNO055_delay_msek(10);
+    } while (mag_var != 3);
 
-    IS_BNO_OK(bno055_write_mag_offset(&mag_bias));
-
+    BNO055_delay_msek(1000);
+    IS_BNO_OK(bno055_read_mag_offset(&mag_bias));
     ESP_LOGD(TAG_BNO, "Mag Bias: X: %d | Y: %d | Z: %d", mag_bias.x, mag_bias.y, mag_bias.z);
+    ESP_LOGI(TAG_BNO, "Mag Calibrated!");
     return BNO055_SUCCESS;
 }
 
@@ -177,6 +161,10 @@ BNO055_RETURN_FUNCTION_TYPE bno055_load_calib_data(mpu_pos_t link)
     IS_BNO_OK(bno055_write_mag_offset(&mag_bias));
     BNO055_delay_msek(10);
 
+    ESP_LOGD(TAG_BNO, "Acce Bias: X: %d | Y: %d | Z: %d", accel_bias.x, accel_bias.y, accel_bias.z);
+    ESP_LOGD(TAG_BNO, "Gyro Bias: X: %d | Y: %d | Z: %d", gyro_bias.x, gyro_bias.y, gyro_bias.z);
+    ESP_LOGD(TAG_BNO, "Mag Bias: X: %d | Y: %d | Z: %d", mag_bias.x, mag_bias.y, mag_bias.z);
+
     ESP_LOGI(TAG_BNO, "Calibration profile loaded successfully!");
 
     return BNO055_SUCCESS;
@@ -184,20 +172,22 @@ BNO055_RETURN_FUNCTION_TYPE bno055_load_calib_data(mpu_pos_t link)
 
 BNO055_RETURN_FUNCTION_TYPE bno055_calib_routine(uint8_t sensors, mpu_pos_t link)
 {
+    if (sensors & LOAD_FROM_NVS)
+        IS_BNO_OK(bno055_load_calib_data(link));
+
     if (sensors & ACCEL)
-        IS_BNO_OK(bno055_calib_accel());
+        IS_BNO_OK(bno055_calib_accel(link));
 
     if (sensors & GYRO)
-        IS_BNO_OK(bno055_calib_gyro());
+        IS_BNO_OK(bno055_calib_gyro(link));
 
     if (sensors & MAG)
-        IS_BNO_OK(bno055_calib_mag());
-
-    if (sensors == NONE)
-        IS_BNO_OK(bno055_load_calib_data(link));
+        IS_BNO_OK(bno055_calib_mag(link));
 
     return BNO055_SUCCESS;
 }
+
+////////////////////////////////////////////////////////////////////////////
 
 void bno055_self_test_routine(void)
 {
@@ -233,17 +223,31 @@ BNO055_RETURN_FUNCTION_TYPE bno055_init_routine(struct bno055_t *imu, uint8_t se
     imu->delay_msec = BNO055_delay_msek;
 
     IS_BNO_OK(bno055_init(imu));
-    IS_BNO_OK(bno055_calib_routine(sensors, link));
+
+    // Inverting Pitch and Roll according to our application
+    IS_BNO_OK(bno055_set_axis_remap_value(BNO055_REMAP_X_Y));
+    IS_BNO_OK(bno055_set_remap_x_sign(BNO055_REMAP_AXIS_NEGATIVE));
+    IS_BNO_OK(bno055_set_remap_y_sign(BNO055_REMAP_AXIS_POSITIVE));
+
+    /* 
+    In NDOF fusion mode - 
+    accel full scale is at +/- 4g, ODR is 62.5 Hz
+    gyro full scale is at +/- 2000dps, ODR is 32 Hz
+    mag data is in 16 LSB/microTesla, ODR is 20 Hz in forced mode
+*/
     IS_BNO_OK(bno055_set_operation_mode(BNO055_OPERATION_MODE_NDOF));
     IS_BNO_OK(bno055_set_euler_unit(BNO055_EULER_UNIT_DEG));
+    IS_BNO_OK(bno055_set_accel_unit(BNO055_ACCEL_UNIT_MG));
 
+    IS_BNO_OK(bno055_calib_routine(sensors, link));
     bno055_self_test_routine();
     bno055_get_calib_status();
 
     ESP_LOGI(TAG_BNO, "BNO Initialised!");
-
     return BNO055_SUCCESS;
 }
+
+////////////////////////////////////////////////////////////////////////////
 
 void bno055_get_rph(struct bno055_euler_float_t *bno_rph)
 {
@@ -251,12 +255,54 @@ void bno055_get_rph(struct bno055_euler_float_t *bno_rph)
 
     if (bno055_read_euler_h(&heading) == BNO055_SUCCESS && bno055_read_euler_p(&pitch) == BNO055_SUCCESS && bno055_read_euler_r(&roll) == BNO055_SUCCESS)
     {
-        bno_rph->r = roll / 16.0f;
-        bno_rph->p = pitch / 16.0f;
-        bno_rph->h = heading / 16.0f;
+        bno_rph->r = roll / EULER_SCALE;
+        bno_rph->p = pitch / EULER_SCALE;
+        bno_rph->h = heading / EULER_SCALE;
     }
     else
         ESP_LOGE(TAG_BNO, "Measurement Error!");
 
     BNO055_delay_msek(10);
+}
+
+void bno055_get_rph_from_quaternion(struct bno055_euler_float_t *bno_rph)
+{
+    struct bno055_quaternion_t link_quat;
+
+    if (bno055_read_quaternion_wxyz(&link_quat) == BNO055_SUCCESS)
+    {
+        float qw = link_quat.w / QUATERNION_SCALE;
+        float qx = link_quat.x / QUATERNION_SCALE;
+        float qy = link_quat.y / QUATERNION_SCALE;
+        float qz = link_quat.z / QUATERNION_SCALE;
+
+        double qw2 = qw * qw;
+        double qx2 = qx * qx;
+        double qy2 = qy * qy;
+        double qz2 = qz * qz;
+
+        bno_rph->h = -atan2f(2.0f * (qx * qy + qw * qz), qw2 + qx2 - qy2 - qz2) * RAD_TO_DEG;
+        bno_rph->r = asinf(2.0f * (qx * qz - qw * qy)) * RAD_TO_DEG;
+        bno_rph->p = -atan2f(2.0f * (qw * qx + qy * qz), qw2 - qx2 - qy2 + qz2) * RAD_TO_DEG;
+
+        if (bno_rph->h < 0)
+            bno_rph->h += 360;
+    }
+    else
+        ESP_LOGE(TAG_BNO, "Measurement Error!");
+
+    // NOTE: For NDOF Fusion rate, the algo calling rate is 100Hz.
+    BNO055_delay_msek(10);
+}
+
+////////////////////////////////////////////////////////////////////////////
+
+float get_corrected_joint_yaw(float joint_angle)
+{
+    if (joint_angle >= 180)
+        joint_angle -= 360.0f;
+    else if (joint_angle <= -180)
+        joint_angle += 360.0f;
+
+    return joint_angle;
 }
