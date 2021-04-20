@@ -213,6 +213,6 @@
   <xacro:RevJoint id="shoulder_pitch" trans="0 ${MXDepth/2} 0" rpy="-1.57 -1.57 0" parent="shoulder_pitch_motor" child="shoulder_roll_motor" axis="0 0 -1" l="-3.14" u="3.14" v="1.0"/>
   <xacro:RevJoint id="shoulder_roll" trans="0 ${MXLengthAxisLong + MXDepth/2} ${MXLengthAxisLong}" rpy="1.57 1.57 3.14" parent="shoulder_roll_motor" child="shoulder_yaw_motor" axis="0 0 -1" l="-3.14" u="3.14" v="1.0"/>
   <xacro:RevJoint id="shoulder_yaw" trans="0 0 0" rpy="1.57 0 -1.57" parent="shoulder_yaw_motor" child="link_1" axis="1 0 0" l="-1.57" u="1.57" v="1.0"/>
-  <xacro:RevJoint id="elbow_pitch" trans="0 ${MXBracketLength + LinkLength + MXLengthAxisLong} 0" rpy="0 -1.57 0" parent="link_1" child="link_2" axis="1 0 0" l="-1.57" u="1.57" v="1.0"/>
+  <xacro:RevJoint id="elbow_pitch" trans="0 ${MXBracketLength + LinkLength + MXLengthAxisLong} 0" rpy="0 -1.57 0" parent="link_1" child="link_2" axis="-1 0 0" l="-1.57" u="1.57" v="1.0"/>
 
 </robot>

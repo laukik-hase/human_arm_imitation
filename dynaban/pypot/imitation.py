@@ -7,21 +7,29 @@ import pypot.dynamixel
 import matplotlib.pyplot as plt
 import manipulator_math_utils as mmu
 import sys
+import csv
 
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
 
-motor_id = [2,3,4]
+SPLINE = 10000
+motor_id = [2,3,1]
 JOINTS = len(motor_id)
 DXL_DICT_3      = dict(zip(motor_id, [3]*JOINTS))
 DXL_DICT_1      = dict(zip(motor_id, [3]*JOINTS))
 
 filename = sys.argv[1]
 my_manipulator_math_utils = mmu.manipulator_math_utils(JOINTS)
-coeff_angle, coeff_torque = my_manipulator_math_utils.calculate_coeffs(filename,False, [[-1,90],[-1,270],[-1,180]])
+# coeff_angle, coeff_torque = my_manipulator_math_utils.calculate_coeffs(filename,False,[[-1,90],[-1,270],[-1,180]])
+coeff_angle, coeff_torque = my_manipulator_math_utils.calculate_coeffs(filename,False,[[1,270],[-1,270],[1,180]])
+# coeff_angle, coeff_torque = my_manipulator_math_utils.calculate_coeffs(filename)
 
-# print(angle_coeff)
+# pp.pprint(coeff_angle)
+# pp.pprint(coeff_torque)
 
 ports = pypot.dynamixel.get_available_ports()
-state_file = open("demo2_imitation_wot.csv", "w")
+# state_file = open("demo2_imitation_wt.csv", "w")
+state_file = open('demo2_imitation_wot_final.csv', 'w')
 str_state = []
 
 if not ports:
@@ -151,6 +159,7 @@ def init(id):
         print(start_angle)
         current_pos = int(dxl_io.get_present_position([num])[0])
 #         print(current_pos)
+#         dxl_io.set_goal_position({id[joints]:0})
         diff = abs(current_pos-start_angle)
         for i in range(diff):
              if (current_pos > start_angle):
@@ -165,65 +174,74 @@ def init(id):
         time.sleep(0.1)
 
 init(motor_id)
-
-def print_trajectory(id):
-    for joints in range(len(id)):
-        print('\n')
-        for j in range(len(coeff_angle[0])):
-            print(int(coeff_angle[joints][j][3]*360/4096-180),end = '  ')
+# dxl_io.set_goal_position({1:0,2:0,3:90})
+# print(dxl_io.get_outputTorque([2])[0])
+# def print_trajectory(id):
+#     for joints in range(len(id)):
+#         print('\n')
+#         for j in range(len(coeff_angle[0])):
+#             print(int(coeff_angle[joints][j][3]*360/4096-180),end = '  ')
             
 # print_trajectory(motor_id)                  
 condition = True
 
 
-for traj in range(len(coeff_angle[0])):
-    if traj == 0:
-        for joints in range(len(motor_id)):
+data_all = []
 
-            setTraj1(motor_id[joints],10000, [coeff_angle[joints][traj][3],coeff_angle[joints][traj][2],coeff_angle[joints][traj][1],coeff_angle[joints][traj][0]])
-            
-#             setTorque1(motor_id[joints],10000, [coeff_torque[joints][traj][3],coeff_torque[joints][traj][2],coeff_torque[joints][traj][1],coeff_torque[joints][traj][0]])
-            
-        dxl_io.set_mode_dynaban(DXL_DICT_3 ) 
-        
-    else:
-        for joints in range(len(motor_id)):
-            
-#             print(coeff_angle[joints][traj][0])
-            setTraj2(motor_id[joints],10000, [coeff_angle[joints][traj][3],coeff_angle[joints][traj][2],coeff_angle[joints][traj][1],coeff_angle[joints][traj][0]])
-            
-#             setTorque2(motor_id[joints],10000, [coeff_torque[joints][traj][3],coeff_torque[joints][traj][2],coeff_torque[joints][traj][1],coeff_torque[joints][traj][0]])
-            
-        dxl_io.set_copy_next_buffer(DXL_DICT_1 )
-        
-#         time.sleep(1)
-        
-        time_current1 = time.time()
-        time_current2 = time.time()
-        data_all = [] 
-        while (time.time()-time_current1) <= 1:
-#             print(dxl_io.get_present_position([2,3]))
-#             if condition == True:
-#                 temp = time.time()
-#             else:
-#                 pass
-#             condition = False
-#             time_stamp = [str(time.time()-temp)]
-# #             print(time_stamp)
-#             str_state.extend(time_stamp)
-    #             print(dxl_io.get_outputTorque([2])[0])
-            if time.time()-time_current2 >= 0.04: 
-                for _ID in [2,3]:
-                
-                    ang = [str(dxl_io.get_present_position([_ID])[0])]
-    #                 print(ang)
+def execute():
+    for traj in range(len(coeff_angle[0])):
+        if traj == 0:
+            for joints in range(len(motor_id)):
 
-                    str_state.extend(ang)
-#             data_all.append(str_state)
+                setTraj1(motor_id[joints],SPLINE, [coeff_angle[joints][traj][3],coeff_angle[joints][traj][2],coeff_angle[joints][traj][1],coeff_angle[joints][traj][0]])
+
+#                 setTorque1(motor_id[joints],SPLINE, [coeff_torque[joints][traj][3],coeff_torque[joints][traj][2],coeff_torque[joints][traj][1],coeff_torque[joints][traj][0]])
+
+            dxl_io.set_mode_dynaban(DXL_DICT_3 ) 
+    #         dxl_io.set_mode_dynaban({2:3,3:3})
+
+        else:
+            for joints in range(len(motor_id)):
+
+    #             print(coeff_angle[joints][traj][0])
+                setTraj2(motor_id[joints],SPLINE, [coeff_angle[joints][traj][3],coeff_angle[joints][traj][2],coeff_angle[joints][traj][1],coeff_angle[joints][traj][0]])
+
+#                 setTorque2(motor_id[joints],SPLINE, [coeff_torque[joints][traj][3],coeff_torque[joints][traj][2],coeff_torque[joints][traj][1],coeff_torque[joints][traj][0]])
+
+            dxl_io.set_copy_next_buffer(DXL_DICT_1 )
+    #         dxl_io.set_copy_next_buffer({2:1,3:1})
+
+    #         time.sleep(1)
+
+            time_current1 = time.time()
+            time_current2 = time.time()
+
+
+            while (time.time()-time_current1) <= 1:
+    #             print(time.time() - time_current2)
+                if (time.time() - time_current2) > 0.043:
+                    ang = dxl_io.get_present_position([2,3]) + dxl_io.get_outputTorque([2,3])
+                    print(ang)
+                    data_all.append(ang)
+        #             prin
+                    
+                    time_current2 = time.time()
+    #             pp.pprint(data_all)
+    #             print(counter)
             
-                state_file.write(",".join(str_state) + "\n")
-                str_state = []
-                time_current2 = time.time()
-            
+        
+          
+
+# for every_tuple in data_all:
+#     state_file.write(",".join(every_tuple) + "\n")
+# print(len(data_all))
+
+    
 
 # print(data_all)
+
+execute()
+
+with state_file:    
+    write = csv.writer(state_file)
+    write.writerows(data_all)
