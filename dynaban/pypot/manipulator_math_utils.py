@@ -57,17 +57,26 @@ class manipulator_math_utils:
 
     def get_timesplits(self, _timestamps, _spline=1):
         _timesplits = [0]
-        startTime = _timestamps[0]
+        startTime = 0
 
         for i in range(len(_timestamps)):
             if (_timestamps[i] - startTime > _spline):
                 _timesplits.append(i)
-                startTime = _timestamps[i]
+                startTime = startTime + 1
 
-        if (_timesplits[-1] is not len(_timestamps)-1):
-            _timesplits.append(len(_timestamps))
-
+        # print(_timesplits)
         return _timesplits
+
+    def pad_data(self, _timestamps, _angles, _torques, _timesplits):
+        if (_timesplits[-1] is not len(_timestamps)-1):
+            padding_delta_time = _timestamps[_timesplits[-1] + 1] - _timestamps[_timesplits[-1]]
+            no_of_padding  = int( ( math.ceil(_timestamps[-1]) - _timestamps[-1] ) / padding_delta_time )
+            _timestamps.extend(np.arange(_timestamps[-1] + padding_delta_time, math.ceil(_timestamps[-1]), padding_delta_time))
+            for j in range(self.JOINTS):
+                _angles[j].extend([_angles[j][-1]] * no_of_padding)
+                _torques[j].extend([_torques[j][-1]] * no_of_padding)
+            _timesplits.append(len(_timestamps)-1)
+        return _timestamps, _angles, _torques, _timesplits
 
     def get_coeffs_for_angle(self, _timestamps, _angles, _timesplits):
         _coeffs_angle = []
@@ -157,7 +166,8 @@ class manipulator_math_utils:
         if not angle_in_steps: angles = self.angles_to_steps(angles, transformations)
         angles = self.padded_moving_average(angles, moving_average_windowsize)
         timesplits = self.get_timesplits(timestamps, spline)
-
+        timestamps, angles, torques, timesplits = self.pad_data(timestamps, angles, torques, timesplits)
+        # pp.pprint(timestamps)
         if(with_torque):
             coeffs_angle, coeffs_torque = self.get_coeffs_for_angle_torque(timestamps, angles, torques, timesplits)
             return coeffs_angle, coeffs_torque
@@ -166,8 +176,8 @@ class manipulator_math_utils:
             return coeffs_angle
 
 if __name__=="__main__":
-    my_joints = 3
+    my_joints = 2
     my_manipulator_math_utils = manipulator_math_utils(my_joints)
     my_transformations = [[1,0]]*my_joints
     a, b = my_manipulator_math_utils.calculate_coeffs(sys.argv[1])
-    pp.pprint(a,b)
+    # pp.pprint(b)

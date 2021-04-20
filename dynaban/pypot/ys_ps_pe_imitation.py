@@ -14,14 +14,14 @@ import csv
 import pypot.dynamixel
 import sys
 
-motor_id = [2,3,4]
+motor_id = [2,3,1]
 size = len(motor_id)
 DXL_DICT_3      = dict(zip(motor_id, [3]*size))
 DXL_DICT_1      = dict(zip(motor_id, [3]*size))
 
 
 ports = pypot.dynamixel.get_available_ports()
-state_file = open("ys_ps_pe_imitation.csv", "w")
+state_file = open("demo2_old_wt.csv", "w")
 str_state = []
 
 if not ports:
@@ -175,39 +175,39 @@ def read_file(inp):
     counter = 0
     moving_averages,moving_averages1,moving_averages2 = [],[],[]
 
-    while i < len(angle1) - window_size + 1:
+#     while i < len(angle1) - window_size + 1:
         
-        this_window = angle1[i : i + window_size]
-        this_window1 = angle2[i : i + window_size]
-        this_window2 = angle3[i : i + window_size]
+#         this_window = angle1[i : i + window_size]
+#         this_window1 = angle2[i : i + window_size]
+#         this_window2 = angle3[i : i + window_size]
         
-        window_average = sum(this_window) / window_size
-        window_average1 = sum(this_window1) / window_size
-        window_average2 = sum(this_window2) / window_size
+#         window_average = sum(this_window) / window_size
+#         window_average1 = sum(this_window1) / window_size
+#         window_average2 = sum(this_window2) / window_size
         
-        moving_averages.append(window_average)
-        moving_averages1.append(window_average1)
-        moving_averages2.append(window_average2)
-        i += 1
+#         moving_averages.append(window_average)
+#         moving_averages1.append(window_average1)
+#         moving_averages2.append(window_average2)
+#         i += 1
 
-    while counter < window_size:
-        final_angle1.append(moving_averages[0])
-        final_angle2.append(moving_averages1[0])
-        final_angle3.append(moving_averages2[0])
-        counter = counter + 1
+#     while counter < window_size:
+#         final_angle1.append(moving_averages[0])
+#         final_angle2.append(moving_averages1[0])
+#         final_angle3.append(moving_averages2[0])
+#         counter = counter + 1
 
-    final_angle1 = final_angle1 + moving_averages[1:]
-    final_angle2 = final_angle2 + moving_averages1[1:]
-    final_angle3 = final_angle3 + moving_averages2[1:]
+#     final_angle1 = final_angle1 + moving_averages[1:]
+#     final_angle2 = final_angle2 + moving_averages1[1:]
+#     final_angle3 = final_angle3 + moving_averages2[1:]
     
     # print(final_angle1)
     k = 1
     
     for element in range(len(data)):
         if data[element][0] <= k * 1:
-            t.append(final_angle1[element])
-            t1.append(final_angle2[element])
-            t2.append(final_angle3[element])
+            t.append(angle1[element])
+            t1.append(angle2[element])
+            t2.append(angle3[element])
             t3.append(torque1[element])
             t4.append(torque2[element])
             t5.append(torque3[element])
@@ -223,9 +223,9 @@ def read_file(inp):
             
             t,t1,t2,t3,t4,t5 = [],[],[],[],[],[]
             
-            t.append(final_angle1[element])
-            t1.append(final_angle2[element])
-            t2.append(final_angle3[element])
+            t.append(angle1[element])
+            t1.append(angle2[element])
+            t2.append(angle3[element])
             t3.append(torque1[element])
             t4.append(torque2[element])
             t5.append(torque3[element])
@@ -239,7 +239,7 @@ def read_file(inp):
 #     return res, res1
     return res ,res1 ,res2 ,res3, res4, res5
 # file_name = input('Enter csv file for motor: ')
-angle1, angle2, angle3, torque1, torque2, torque3 = read_file('ys_ps_pe_copsim.csv')
+angle1, angle2, angle3, torque1, torque2, torque3 = read_file('demo2_final_steps.csv')
 
 # angle1, angle2 = read_file('Ps_Pe_new (1).csv')
 # print(angle2)
@@ -342,20 +342,14 @@ def init(id):
 
 init(motor_id)
 
-# # for i in range(10):
-#     for j in range(2):
-#         timer = [str(i),str(i+1)]
-#         str_state.extend(timer) 
-        
-#     state_file.write(",".join(str_state) + "\n")
-#     print(timer)
+
 condition = True
+
 for traj in range(0,len(coeff1)):
     if traj == 0:
         for joints in range(len(motor_id)):
             joint_torque = joints + len(motor_id)
-#             print("hi")
-#             print(all_coeff[joint_torque][traj][4])
+
             setTraj1(motor_id[joints],10000, [all_coeff[joints][traj][3],all_coeff[joints][traj][2],all_coeff[joints][traj][1],all_coeff[joints][traj][0]])
             
             setTorque1(motor_id[joints],10000, [all_coeff[joint_torque][traj][3],all_coeff[joint_torque][traj][2],all_coeff[joint_torque][traj][1],all_coeff[joint_torque][traj][0]])
@@ -372,31 +366,36 @@ for traj in range(0,len(coeff1)):
             setTorque2(motor_id[joints],10000, [all_coeff[joint_torque][traj][3],all_coeff[joint_torque][traj][2],all_coeff[joint_torque][traj][1],all_coeff[joint_torque][traj][0]])
             
         dxl_io.set_copy_next_buffer(DXL_DICT_1 )
-#         time.sleep(1)
-        time_current = time.time()
-        
-        while (time.time()-time_current) <= 1:
-            if condition == True:
-                temp = time.time()
-            else:
-                pass
-            condition = False
-            time_stamp = [str(time.time()-temp)]
-#             print(time_stamp)
-            str_state.extend(time_stamp)
+        time.sleep(1)
+#         data_all = []
+        time_current1 = time.time()
+        time_current2 = time.time()
+#         while (time.time()-time_current1) <= 1:
+#             if condition == True:
+#                 temp = time.time()
+#             else:
+#                 pass
+#             condition = False
+#             time_stamp = [str(time.time()-temp)]
+# #             print(time_stamp)
+#             str_state.extend(time_stamp)
             
-            for joints in motor_id:
-                ang = [str(dxl_io.get_present_position([joints])[0]),str(dxl_io.get_outputTorque([joints])[0])]
-                print(ang)
+#             if time.time()-time_current2 >= 0.04: 
+#                 for _ID in [2,3]:
+                
+#                     ang = [str(dxl_io.get_present_position([_ID])[0]),str(dxl_io.get_outputTorque([_ID])[0])]
+#     #                 print(ang)
 
-                str_state.extend(ang)
+#                     str_state.extend(ang)
+#             data_all.append(str_state)
             
-            state_file.write(",".join(str_state) + "\n")
-            str_state = []
-            time.sleep(0.025)
+                
+#             str_state = []
+#             time_current2 = time.time()
+#             time.sleep(0.025)
 
-
-
+# state_file.write(",".join(str_state) + )
+# print(data_all)
 
 
 

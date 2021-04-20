@@ -15,7 +15,7 @@ import sys
 state_file = open("Shoulder_sweep_with_torque.csv", "w")
 
 num1 = 2
-num2 = 4
+num2 = 1
 
 
 ports = pypot.dynamixel.get_available_ports()
@@ -152,8 +152,8 @@ dxl_io.enable_torque({num2:1})
 time.sleep(0.1)
 
 
-# dxl_io.set_goal_position({num1:0})
-
+dxl_io.set_goal_position({num1:-90})
+time.sleep(2)
 # dxl_io.set_goal_position({num2:0})
 
 # time_current = time.time()
@@ -163,12 +163,22 @@ time.sleep(0.1)
 
 
 # time.sleep(1)
+time_current1 = time.time()
+time_current2 = time.time()
+setTraj1(num1, 20000, [1024.0, 0.0, 0.0])
+dxl_io.set_mode_dynaban({num1:3}) 
 
-setTraj1(num1, 10000, [-2048.0, 512.0, 0.0])
+while (time.time()-time_current1) <= 4:
+#             print(time.time() - time_current2)
+            if (time.time() - time_current2) > 0.04:
+                ang = dxl_io.get_present_position([2]) + dxl_io.get_outputTorque([2])
+                print(ang)
+                time_current2 = time.time()
+
 # setTraj1(num2, 5000, [2048.0, 0.0, 0.0])
 print ("Setting mode and tracking :")
 
-dxl_io.set_mode_dynaban({num1:3}) 
+
 
 # time_start = time.time()
 # setTraj2(num1, 20000, [2048.0, 512.0, 0.0])
