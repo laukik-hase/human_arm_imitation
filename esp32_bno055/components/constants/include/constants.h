@@ -41,9 +41,17 @@
 #define NO_OF_LINKS 4
 
 // Sensor mask for calibration
-#define NONE ((uint8_t)0x00)
-#define ACCEL ((uint8_t)0x01)
-#define GYRO ((uint8_t)0x02)
-#define MAG ((uint8_t)0x04)
+#define NONE (((uint8_t)0x00)
+#define ACCEL ((uint8_t)1 << 0)
+#define GYRO ((uint8_t)1 << 1)
+#define MAG ((uint8_t)1 << 2)
+#define LOAD_FROM_NVS ((uint8_t)1 << 3)
+
+#define RAD_TO_DEG (57.2958f)
+#define DEG_TO_RAD (0.0174533f)
+#define PI (3.14159265f)
+
+#define EULER_SCALE (16.0f)
+#define QUATERNION_SCALE (16384.0f)
 
 #endif

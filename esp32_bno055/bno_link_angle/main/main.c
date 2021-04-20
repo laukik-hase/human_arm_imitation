@@ -20,6 +20,7 @@ static const char *TAG = "bno_calib_st";
     Heading: Z-Axis
 */
 
+
 void app_main()
 {
     ESP_LOGI(TAG, "Hello From ESP32!");
@@ -28,19 +29,17 @@ void app_main()
     // Initializing the NVS and loading the already defined calibration matrix
     // Refer: nvs_utils.c
     ESP_ERROR_CHECK(nvs_init());
-    // ESP_ERROR_CHECK(nvs_load_calib_data()); No need to load calib data here
+    ESP_ERROR_CHECK(nvs_load_calib_data());
 
-    uint8_t sensors = ACCEL | GYRO | MAG;
+    // sensors = ACCEL | GYRO | MAG -> for full calibration, NONE -> for nothing
+    uint8_t sensors = LOAD_FROM_NVS;
 
     struct bno055_t link;
-    i2c_mux_select(MPU_PALM); // Connect to PALM
+    i2c_mux_select(MPU_PALM); // Connect to PALM slot
     bno055_init_routine(&link, sensors, MPU_PALM);
-
+    
     struct bno055_euler_float_t link_angle;
     vTaskDelay(2000 / portTICK_PERIOD_MS);
-
-    //NOTE: After calibration, roll and pitch should be 0 on a flat surface while yaw should be 
-    // 0 deg while pointing to the geographic north pole
 
     while (1)
     {
