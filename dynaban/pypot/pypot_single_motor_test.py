@@ -13,9 +13,9 @@ if not ports:
 print('ports found', ports)
 
 print('connecting on the first available port:', ports[0])
-dxl_io = pypot.dynamixel.DxlIO(ports[0])
+dxl_io = pypot.dynamixel.DxlIO(ports[0], baudrate=57600)
 
-ID = 4
+ID = 1
 print("Test with PID only:")
 dxl_io.set_mode_dynaban({ID: 0})
 time.sleep(0.1)

@@ -16,7 +16,7 @@ SPLINE = 10000
 motor_id = [2,3,1]
 JOINTS = len(motor_id)
 DXL_DICT_3      = dict(zip(motor_id, [3]*JOINTS))
-DXL_DICT_1      = dict(zip(motor_id, [3]*JOINTS))
+DXL_DICT_1      = dict(zip(motor_id, [1]*JOINTS))
 
 filename = sys.argv[1]
 my_manipulator_math_utils = mmu.manipulator_math_utils(JOINTS)
@@ -29,7 +29,7 @@ coeff_angle, coeff_torque = my_manipulator_math_utils.calculate_coeffs(filename,
 
 ports = pypot.dynamixel.get_available_ports()
 # state_file = open("demo2_imitation_wt.csv", "w")
-state_file = open('demo2_imitation_wot_final.csv', 'w')
+state_file = open('demo2_imitation_wt_final.csv', 'w')
 str_state = []
 
 if not ports:
@@ -38,8 +38,9 @@ if not ports:
 print('ports found', ports)
 
 print('connecting on the first available port:', ports[0])
-dxl_io = pypot.dynamixel.DxlIO(ports[0])
 
+dxl_io = pypot.dynamixel.DxlIO(ports[0],baudrate = 57600)
+# dxl_io.dxl_to_baudrate(1)
 def setTraj1(id, duration, coeffs):
     errorCounter = 0
     delay = 0.001
@@ -161,44 +162,39 @@ def init(id):
 #         print(current_pos)
 #         dxl_io.set_goal_position({id[joints]:0})
         diff = abs(current_pos-start_angle)
-        for i in range(diff):
-             if (current_pos > start_angle):
-                      dxl_io.set_goal_position({id[joints]:current_pos - i})
-                      time.sleep(0.01) 
-             else:
-                      dxl_io.set_goal_position({id[joints]:current_pos + i})
-                      time.sleep(0.01)
+#         for i in range(diff):
+#              if (current_pos > start_angle):
+#                       dxl_io.set_goal_position({id[joints]:current_pos - i})
+#                       time.sleep(0.01) 
+#              else:
+#                       dxl_io.set_goal_position({id[joints]:current_pos + i})
+#                       time.sleep(0.01)
                   
 #         time.sleep(0.5)
         dxl_io.set_pid_gain({id[joints]:[1,0,0]})
         time.sleep(0.1)
 
 init(motor_id)
-# dxl_io.set_goal_position({1:0,2:0,3:90})
-# print(dxl_io.get_outputTorque([2])[0])
-# def print_trajectory(id):
-#     for joints in range(len(id)):
-#         print('\n')
-#         for j in range(len(coeff_angle[0])):
-#             print(int(coeff_angle[joints][j][3]*360/4096-180),end = '  ')
-            
-# print_trajectory(motor_id)                  
+                
 condition = True
-
+# dxl_io.enable_torque({1:1})
 
 data_all = []
 
 def execute():
+    print("in execute")
     for traj in range(len(coeff_angle[0])):
         if traj == 0:
+            temp = time.time()
             for joints in range(len(motor_id)):
-
+                
                 setTraj1(motor_id[joints],SPLINE, [coeff_angle[joints][traj][3],coeff_angle[joints][traj][2],coeff_angle[joints][traj][1],coeff_angle[joints][traj][0]])
-
-#                 setTorque1(motor_id[joints],SPLINE, [coeff_torque[joints][traj][3],coeff_torque[joints][traj][2],coeff_torque[joints][traj][1],coeff_torque[joints][traj][0]])
+                   
+                # setTorque1(motor_id[joints],SPLINE, [coeff_torque[joints][traj][3],coeff_torque[joints][traj][2],coeff_torque[joints][traj][1],coeff_torque[joints][traj][0]])
 
             dxl_io.set_mode_dynaban(DXL_DICT_3 ) 
-    #         dxl_io.set_mode_dynaban({2:3,3:3})
+#             dxl_io.set_mode_dynaban({3:3,1:3})
+
 
         else:
             for joints in range(len(motor_id)):
@@ -206,28 +202,30 @@ def execute():
     #             print(coeff_angle[joints][traj][0])
                 setTraj2(motor_id[joints],SPLINE, [coeff_angle[joints][traj][3],coeff_angle[joints][traj][2],coeff_angle[joints][traj][1],coeff_angle[joints][traj][0]])
 
-#                 setTorque2(motor_id[joints],SPLINE, [coeff_torque[joints][traj][3],coeff_torque[joints][traj][2],coeff_torque[joints][traj][1],coeff_torque[joints][traj][0]])
+                # setTorque2(motor_id[joints],SPLINE, [coeff_torque[joints][traj][3],coeff_torque[joints][traj][2],coeff_torque[joints][traj][1],coeff_torque[joints][traj][0]])
 
             dxl_io.set_copy_next_buffer(DXL_DICT_1 )
-    #         dxl_io.set_copy_next_buffer({2:1,3:1})
+#             dxl_io.set_copy_next_buffer({3:1,1:1})
 
-    #         time.sleep(1)
+            # time.sleep(1)
 
             time_current1 = time.time()
             time_current2 = time.time()
 
 
             while (time.time()-time_current1) <= 1:
-    #             print(time.time() - time_current2)
-                if (time.time() - time_current2) > 0.043:
+
+#                 if (time.time() - time_current2) > 0.043:
+                    # timestamp = (time.time()-temp)
+                    # data_all.append(timestamp)
                     ang = dxl_io.get_present_position([2,3]) + dxl_io.get_outputTorque([2,3])
                     print(ang)
                     data_all.append(ang)
         #             prin
                     
                     time_current2 = time.time()
-    #             pp.pprint(data_all)
-    #             print(counter)
+                # pp.pprint(data_all)
+                # print(counter)
             
         
           

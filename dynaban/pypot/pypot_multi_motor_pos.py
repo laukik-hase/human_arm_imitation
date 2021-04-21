@@ -13,22 +13,23 @@ if not ports:
 print('ports found', ports)
 
 print('connecting on the first available port:', ports[0])
-dxl_io = pypot.dynamixel.DxlIO(ports[0])
+dxl_io = pypot.dynamixel.DxlIO(ports[0], baudrate=57600)
 
-ID_LIST = [1, 2, 3, 4]
-ID_SIZE = len(ID_LIST)
-print("Test with PID only:")
+ID_LIST = [2,3,1]
+JOINTS = len(ID_LIST)
 
-cur_pos = [90, 0, 0, 0]
-for i in range(ID_SIZE):
-    dxl_io.set_mode_dynaban({ID_LIST[i]: 0})
+DXL_DICT_1      = dict(zip(ID_LIST, [1]*JOINTS))
+DXL_DICT_0      = dict(zip(ID_LIST, [0]*JOINTS))
+DXL_DICT_PID    = dict(zip(ID_LIST, [[1,0,0]]*JOINTS))
+
+cur_pos = [0,90,0]
+DXL_DICT_cur_pos = dict(zip(ID_LIST, cur_pos))
+
+dxl_io.set_mode_dynaban(DXL_DICT_0)
 time.sleep(0.1)
-for i in range(ID_SIZE):
-    dxl_io.enable_torque({ID_LIST[i]: 1})
+dxl_io.enable_torque(DXL_DICT_1)
 time.sleep(0.1)
-for i in range(ID_SIZE):
-    dxl_io.set_goal_position({ID_LIST[i]: cur_pos[i]})
+dxl_io.set_goal_position(DXL_DICT_cur_pos)
 time.sleep(1)
-for i in range(ID_SIZE):
-    dxl_io.set_pid_gain({ID_LIST[i]: [1, 0, 0]})
+dxl_io.set_pid_gain(DXL_DICT_PID)
 time.sleep(0.1)
