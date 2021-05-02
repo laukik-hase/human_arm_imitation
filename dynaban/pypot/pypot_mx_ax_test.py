@@ -15,14 +15,14 @@ print('ports found', ports)
 print('connecting on the first available port:', ports[0])
 dxl_io = pypot.dynamixel.DxlIO(ports[0])
 
-ID_LIST = [4,6]
+ID_LIST = [4]
 JOINTS = len(ID_LIST)
 
 DXL_DICT_1      = dict(zip(ID_LIST, [1]*JOINTS))
 DXL_DICT_0      = dict(zip(ID_LIST, [0]*JOINTS))
 # DXL_DICT_PID    = dict(zip(ID_LIST, [[1,0,0]]*JOINTS))
 
-cur_pos = [0,90]
+cur_pos = [0]
 DXL_DICT_cur_pos = dict(zip(ID_LIST, cur_pos))
 
 dxl_io.enable_torque(DXL_DICT_1)
