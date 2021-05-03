@@ -1,6 +1,7 @@
 ### C ###
 # Build folder
 /bno_joint_angle/build/*
+/bno_joint_angle_mqtt/build/*
 /bno_link_angle/build/*
 /bno_calib_st/build/*
 

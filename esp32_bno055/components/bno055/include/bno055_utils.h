@@ -7,13 +7,6 @@
 extern const char *key[36];
 extern const int16_t value[36];
 
-typedef enum
-{
-    ROLL = 0x00,
-    PITCH,
-    HEADING
-} euler_angle_t;
-
 struct joint_angle_t
 {
     float shoulder[3];
