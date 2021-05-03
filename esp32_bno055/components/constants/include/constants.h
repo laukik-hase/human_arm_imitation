@@ -27,7 +27,6 @@
 #define I2C_MASTER_RX_BUF_DISABLE 0 /*!< I2C master do not need buffer */
 #define I2C_MASTER_FREQ_HZ 400000   /*!< I2C master clock frequency */
 
-#define ESP_INTR_FLAG_DEFAULT 0
 #define TCA9548_ADDR 0x70
 
 /*
@@ -39,6 +38,10 @@
 #define BNO055_I2C_TIMEOUT (83386)
 
 #define NO_OF_LINKS 4
+
+#define ROLL (0x00)
+#define PITCH (0x01)
+#define HEADING (0x02)
 
 // Sensor mask for calibration
 #define NONE (((uint8_t)0x00)
@@ -53,5 +56,27 @@
 
 #define EULER_SCALE (16.0f)
 #define QUATERNION_SCALE (16384.0f)
+
+// You can either use the menuconfig utility or pass values directly here
+#define WIFI_SSID "myssid"  // CONFIG_WIFI_SSID
+#define WIFI_PWD  "mypassword"    // CONFIG_WIFI_PWD
+#define WIFI_AP_RECONN_ATTEMPTS 5  // CONFIG_WIFI_AP_RECONN_ATTEMPTS
+
+#define WIFI_CONNECTED_BIT BIT0
+#define WIFI_FAIL_BIT BIT1
+
+#define MQTT_CONNECTED_BIT BIT2
+#define MQTT_RECONN_TIME_LIMIT 30
+#define MQTT_RECONN_ATTEMPTS 3
+
+#define MQTT_BROKER "mqtt://test.mosquitto.org"
+#define MQTT_TOPIC "fyp/sensors"
+#define MQTT_QOS 1
+#define MQTT_STACK 8192
+#define MQTT_BUFFER_SIZE 4096
+#define MQTT_QUEUE_SIZE 16
+
+#define ESP_INTR_FLAG_DEFAULT (0)
+#define GRIPPER_SWITCH (GPIO_NUM_0)
 
 #endif
