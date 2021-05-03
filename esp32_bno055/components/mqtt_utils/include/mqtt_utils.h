@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <math.h>
+#include <stdbool.h>
 
 #include "esp_err.h"
 #include "esp_system.h"
@@ -28,6 +29,7 @@ typedef struct
     float shoulder[3];
     float elbow[3];
     float wrist[3];
+    bool gripper_state;
 } mqtt_data_t;
 
 // MQTT Data queue handle

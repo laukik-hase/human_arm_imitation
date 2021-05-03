@@ -27,6 +27,7 @@ esp_err_t mqtt_send_joint_angles(mqtt_data_t *joint_angle)
     if (root != NULL)
     {
         cJSON_AddItemToObject(root, "timestamp", cJSON_CreateNumber(joint_angle->timestamp));
+        cJSON_AddItemToObject(root, "is_gripper_open", cJSON_CreateBool(joint_angle->gripper_state));
         
         cJSON *shoulder = cJSON_CreateObject();
         cJSON_AddItemToObject(shoulder, "roll", cJSON_CreateNumber(joint_angle->shoulder[ROLL]));

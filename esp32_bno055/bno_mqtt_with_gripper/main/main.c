@@ -11,6 +11,7 @@
 #include "bno055_utils.h"
 #include "wifi_utils.h"
 #include "mqtt_utils.h"
+#include "gpio_utils.h"
 
 static const char *TAG = "bno_test";
 
@@ -25,10 +26,15 @@ void app_main()
 {
     ESP_LOGI(TAG, "Hello From ESP32!");
 
+    gpio_TaskHandle = NULL;
+    is_gripper_open = false;
+
+    ESP_ERROR_CHECK(init_gpio_pins());
+    ESP_ERROR_CHECK(init_gpio_isr());
+    ESP_ERROR_CHECK(i2c_master_init());
+
     wifi_init_sta();
     init_mqtt();
-
-    ESP_ERROR_CHECK(i2c_master_init());
 
     // Initializing the NVS and loading the already defined calibration matrix
     // Refer: nvs_utils.c
@@ -52,13 +58,14 @@ void app_main()
 
     mqtt_data_t joint_angle = {0};
 
-    mqtt_data_queue = xQueueCreate(16, sizeof(mqtt_data_t));
+    mqtt_data_queue = xQueueCreate(MQTT_QUEUE_SIZE, sizeof(mqtt_data_t));
     xTaskCreate(mqtt_get_angles_task, "mqtt_event_data_task", 4096, NULL, 6, NULL);
+    xTaskCreate(gripper_task, "gripper_task", 4096, NULL, 6, &gpio_TaskHandle);
 
-    printf("Time, Rs, Ps, Ys, Pe\n");
+    // printf("Time, Rs, Ps, Ys, Pe\n");
     vTaskDelay(2000 / portTICK_PERIOD_MS);
 
-	float start = (float)esp_timer_get_time() / 1000000;
+    float start = (float)esp_timer_get_time() / 1000000;
 
     while (1)
     {
@@ -77,6 +84,7 @@ void app_main()
         joint_angle.elbow[PITCH] = (link_angle[MPU_BICEP].p - link_angle[MPU_FOREARM].p);
 
         joint_angle.timestamp = ((float)esp_timer_get_time() - start) / 1000000;
+        joint_angle.gripper_state = is_gripper_open;
         xQueueSend(mqtt_data_queue, &joint_angle, (portTickType)portMAX_DELAY);
 
         // CSV-style printing

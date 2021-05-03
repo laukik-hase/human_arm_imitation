@@ -27,7 +27,6 @@
 #define I2C_MASTER_RX_BUF_DISABLE 0 /*!< I2C master do not need buffer */
 #define I2C_MASTER_FREQ_HZ 400000   /*!< I2C master clock frequency */
 
-#define ESP_INTR_FLAG_DEFAULT 0
 #define TCA9548_ADDR 0x70
 
 /*
@@ -75,5 +74,9 @@
 #define MQTT_QOS 1
 #define MQTT_STACK 8192
 #define MQTT_BUFFER_SIZE 4096
+#define MQTT_QUEUE_SIZE 16
+
+#define ESP_INTR_FLAG_DEFAULT (0)
+#define GRIPPER_SWITCH (GPIO_NUM_0)
 
 #endif
