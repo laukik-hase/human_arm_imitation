@@ -3,17 +3,17 @@ import arm_control_utils
 
 # offset = [180 180 90] # niryo
 # DXL_ID = [1,2,3]
-DXL_ID = [1,2]
+DXL_ID = [3]
 
-my_arm_controller = arm_control_utils.arm_controller(DXL_ID,devicename='/dev/ttyUSB0', baudrate=57600)
+my_arm_controller = arm_control_utils.arm_controller(DXL_ID,devicename='/dev/ttyUSB0', baudrate=1000000)
 
 
 
 my_arm_controller.initialize_motors()
 my_arm_controller.enable_state_torque()
 
-state = [1024,1024]
-# state = [2048]
+# state = [2560]
+state = [2048]
 my_arm_controller.write_state(state)
 time.sleep(2)
 

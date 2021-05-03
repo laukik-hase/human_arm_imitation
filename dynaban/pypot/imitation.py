@@ -21,7 +21,7 @@ DXL_DICT_1      = dict(zip(motor_id, [1]*JOINTS))
 filename = sys.argv[1]
 my_manipulator_math_utils = mmu.manipulator_math_utils(JOINTS)
 # coeff_angle, coeff_torque = my_manipulator_math_utils.calculate_coeffs(filename,False,[[-1,90],[-1,270],[-1,180]])
-coeff_angle, coeff_torque = my_manipulator_math_utils.calculate_coeffs(filename,False,[[1,270],[-1,270],[1,180]])
+coeff_angle, coeff_torque = my_manipulator_math_utils.calculate_coeffs(filename,False,[,[-1,270],[1,180]])
 # coeff_angle, coeff_torque = my_manipulator_math_utils.calculate_coeffs(filename)
 
 # pp.pprint(coeff_angle)

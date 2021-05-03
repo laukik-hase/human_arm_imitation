@@ -4,12 +4,10 @@ import Queue as queue
 import json
 import real_time_manipulator_math_utils
 import pprint
+import dynaban as dnb
 pp = pprint.PrettyPrinter(indent=4)
 # import rbdl
 # import manip motion
-
-
-
 
 
 def on_connect(client, userdata, flags, rc):
@@ -18,7 +16,7 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, message):
     msg = message.payload.decode("utf-8")
     q.put(msg)
-    # print("Received: ", msg)
+#     print("Received: ", msg)
 
 broker = "test.mosquitto.org"
 topic = "fyp/sensors"
@@ -29,14 +27,16 @@ client.on_connect=on_connect
 client.on_message = on_message        
 client.connect(broker)      
 client.loop_start()
-JOINTS = 1
+loop_flag=1
 q = queue.Queue()
 
-
-JOINTS = 4
 SPLINE = 1
 WINDOWSIZE = 5
+MOTOR_ID = [1,2,3,4]
+JOINTS = len(MOTOR_ID)
+GRIPPER_ID = 5
 
+db = dnb.dynaban(MOTOR_ID, GRIPPER_ID)
 math_utils_obj = real_time_manipulator_math_utils.manipulator_math_utils(JOINTS)
 timestamps = []
 angles = []
@@ -75,29 +75,35 @@ while loop_flag==1:
             
             
             # moving average with length similar to timestamps
-            print("raw angles")
-            pp.pprint(angles)
+#             print("raw angles")
+#             pp.pprint(angles)
             padded_angles = [ angles[j][-(WINDOWSIZE-1):] for j in range(JOINTS) ]
 
 
-            angles = math_utils_obj.real_time_moving_average(angles)
-            print("angles after moving avg")
-            pp.pprint(angles)
+            angles = math_utils_obj.real_time_moving_average(angles,WINDOWSIZE)
+#             print("angles after moving avg")
+#             pp.pprint(angles)
             # torques = get torque from rbdl (timestamp, angles)
 
             # convert angles to steps
-            transformation = [[1,0]]*JOINTS
+            transformation = [[-1,270],[-1,270],[1,90],[1,90]]
             angles = math_utils_obj.angles_to_steps(angles, transformation)
-            print("angles to steps")
-            pp.pprint(angles)
+#             print("angles to steps")
+#             pp.pprint(angles)
 
             # call to get coeffs
-            angle_coeffs = math_utils_obj.calculate_coefficients_angles(timestamps, angles)
-            print("angles coefficients")
-            pp.pprint(angle_coeffs)
+            coeff_angle = math_utils_obj.calculate_coefficients_angles(timestamps, angles)
+#             print("angles coefficients")
+#             pp.pprint(coeff_angle)
             # set motion on manipulator
-
+            db.init_motor()
+            db.set_zero()
             
+#             db.go_to_start_pos(coeff_angle)
+#             db.write_to_motor(coeff_angle, SPLINE)
+            
+#             db.open_gripper()
+            db.close_gripper()
             # empty
             timestamps = []
             angles = []
@@ -107,10 +113,12 @@ while loop_flag==1:
 
     timestamps.append(msg['timestamp'] - init_timestamp)
     angles[0].append(msg['shoulder']['pitch'])
-    angles[1].append(msg['shoulder']['roll'])
-    angles[2].append(msg['shoulder']['yaw'])
-    angles[3].append(msg['elbow']['pitch'])
+    angles[1].append(msg['shoulder']['pitch'])
+    angles[2].append(msg['shoulder']['pitch'])
+    angles[3].append(msg['shoulder']['pitch'])
+#     angles[1].append(msg['shoulder']['roll'])
+#     angles[2].append(msg['shoulder']['yaw'])
+#     angles[3].append(msg['elbow']['pitch'])
 
 client.disconnect()
-client.loop_stop(
-)
+client.loop_stop()

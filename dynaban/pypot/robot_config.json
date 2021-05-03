@@ -1,7 +1,7 @@
 {
 	"controllers": {
 		"dxl_controller_0": {
-			"sync_read": false, "attached_motors": ["motor_5"], "port": "auto"
+			"sync_read": false, "attached_motors": ["motor_2"], "port": "auto"
 			}
 	}, 
 	"motorgroups": {
@@ -11,21 +11,21 @@
 		"motor_1": {
 			"orientation": "direct",
 			"type": "MX-64", 
-			"id": 2, 
+			"id": 1, 
 			"angle_limit": [0.0,0.0], 
 			"offset": 0.0
 		},
 		"motor_2": {
 			"orientation": "direct",
 			"type": "MX-64", 
-			"id": 3, 
+			"id": 2, 
 			"angle_limit": [0.0,0.0], 
 			"offset": 0.0
 		},
 		"motor_3": {
 			"orientation": "direct",
 			"type": "MX-64", 
-			"id": 1, 
+			"id": 3, 
 			"angle_limit": [0.0,0.0], 
 			"offset": 0.0
 		},
@@ -39,7 +39,7 @@
 		"motor_5": {
 			"orientation": "direct",
 			"type": "AX-12A", 
-			"id": 7, 
+			"id": 5, 
 			"angle_limit": [0.0,0.0], 
 			"offset": 0.0
 		}
