@@ -10,7 +10,7 @@ import paho.mqtt.client as paho
 
 broker = "test.mosquitto.org"
 topic = "fyp/sensors"
-qos = 1
+qos = 0
 msg_interval = 3
 
 def sim_msg():
@@ -32,7 +32,7 @@ def on_publish(client, userdata, mid):
     client.mid_value = mid
     client.puback_flag = True
 
-def wait_for_pub(client, msgType, period=0.25, wait_time=40, running_loop=False):
+def wait_for_pub(client, msgType, period=0.1, wait_time=40, running_loop=False):
     client.running_loop = running_loop
     count = 0
     while True:
@@ -50,7 +50,7 @@ def wait_for_pub(client, msgType, period=0.25, wait_time=40, running_loop=False)
     return True
 
 def c_publish(client, topic, out_message, qos):
-    res, mid = client.publish(topic, out_message, qos)
+    res, mid = client.publish(topic, out_message, qos, retain = False)
     if res == 0:
         if wait_for_pub(client, "PUBACK", running_loop=True):
             if mid == client.mid_value:
