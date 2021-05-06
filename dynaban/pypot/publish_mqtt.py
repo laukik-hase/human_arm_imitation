@@ -6,19 +6,40 @@ import sys
 from itertools import *
 from math import *
 
+
 import paho.mqtt.client as paho
 
-broker = "test.mosquitto.org"
-topic = "fyp/sensors"
+broker = "broker.hivemq.com"
+topic = "fyp/demo"
 qos = 0
 msg_interval = 3
-
+flag = True
+pitch,roll,yaw, epitch =0,0,0,0 
+demo_time = 0
+start_time = time.time()
 def sim_msg():
+    global pitch, flag, demo_time, roll,yaw,epitch
+    if pitch > -90 and flag:
+        pitch -= 3
+#         roll -= 1
+        yaw -= 3
+        epitch -= 3
+        
+    elif pitch < 0 :
+        flag =False
+        pitch += 3
+#         roll += 1
+        yaw += 3
+        epitch += 3
+    else :
+        flag = True
+    demo_time += 0.03    
     msg_dict = {
-        'timestamp': time.time() - start,
-        'shoulder': {'roll' : 0.0, 'pitch': 45.0, 'yaw': 90.0},
-        'elbow': {'pitch': 45.0}
+        'timestamp': time.time()-start_time,
+        'shoulder': {'roll' : 0.0, 'pitch': pitch, 'yaw': yaw},
+        'elbow': {'pitch': epitch}
     }
+    
     msg_json = json.dumps(msg_dict, indent=4)
     return msg_json
 

@@ -1,7 +1,7 @@
 {
 	"controllers": {
 		"dxl_controller_0": {
-			"sync_read": false, "attached_motors": ["motor_2"], "port": "auto"
+			"sync_read": false, "attached_motors": ["motor_1"], "port": "auto"
 			}
 	}, 
 	"motorgroups": {

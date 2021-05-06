@@ -13,16 +13,17 @@ import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
 SPLINE = 10000
-motor_id = [2,3,1]
+motor_id = [1,2,4]
 JOINTS = len(motor_id)
 DXL_DICT_3      = dict(zip(motor_id, [3]*JOINTS))
 DXL_DICT_1      = dict(zip(motor_id, [1]*JOINTS))
 
 filename = sys.argv[1]
 my_manipulator_math_utils = mmu.manipulator_math_utils(JOINTS)
-# coeff_angle, coeff_torque = my_manipulator_math_utils.calculate_coeffs(filename,False,[[-1,90],[-1,270],[-1,180]])
-coeff_angle, coeff_torque = my_manipulator_math_utils.calculate_coeffs(filename,False,[,[-1,270],[1,180]])
-# coeff_angle, coeff_torque = my_manipulator_math_utils.calculate_coeffs(filename)
+# coeff_angle, coeff_torque = my_manipulator_math_utils.calculate_coeffs(filename,False,[[1,90]])
+# coeff_angle, coeff_torque = my_manipulator_math_utils.calculate_coeffs(filename,False,[[-1,270],[-1,270],[1,180]])
+# transformations = [[-1,180],[1,180]] P and Y 
+# coeff_angle, coeff_torque = my_manipulator_math_utils.calculate_coeffs(filename, False, transformations)
 
 # pp.pprint(coeff_angle)
 # pp.pprint(coeff_torque)
@@ -39,7 +40,7 @@ print('ports found', ports)
 
 print('connecting on the first available port:', ports[0])
 
-dxl_io = pypot.dynamixel.DxlIO(ports[0],baudrate = 57600)
+dxl_io = pypot.dynamixel.DxlIO(ports[0],baudrate = 1000000)
 # dxl_io.dxl_to_baudrate(1)
 def setTraj1(id, duration, coeffs):
     errorCounter = 0
@@ -192,8 +193,8 @@ def execute():
                    
                 # setTorque1(motor_id[joints],SPLINE, [coeff_torque[joints][traj][3],coeff_torque[joints][traj][2],coeff_torque[joints][traj][1],coeff_torque[joints][traj][0]])
 
-            dxl_io.set_mode_dynaban(DXL_DICT_3 ) 
-#             dxl_io.set_mode_dynaban({3:3,1:3})
+#             dxl_io.set_mode_dynaban(DXL_DICT_3 ) 
+            dxl_io.set_mode_dynaban({1:3})
 
 
         else:
@@ -204,26 +205,27 @@ def execute():
 
                 # setTorque2(motor_id[joints],SPLINE, [coeff_torque[joints][traj][3],coeff_torque[joints][traj][2],coeff_torque[joints][traj][1],coeff_torque[joints][traj][0]])
 
-            dxl_io.set_copy_next_buffer(DXL_DICT_1 )
-#             dxl_io.set_copy_next_buffer({3:1,1:1})
+#             dxl_io.set_copy_next_buffer(DXL_DICT_1 )
+            dxl_io.set_copy_next_buffer({1:1})
+            print("get a1 for traj1" ,dxl_io.get_a0_traj1([1]))
+            print("get a1 for traj2" ,dxl_io.get_a0_traj2([1]))
+            time.sleep(1)
 
-            # time.sleep(1)
-
-            time_current1 = time.time()
-            time_current2 = time.time()
+#             time_current1 = time.time()
+#             time_current2 = time.time()
 
 
-            while (time.time()-time_current1) <= 1:
+#             while (time.time()-time_current1) <= 1:
 
-#                 if (time.time() - time_current2) > 0.043:
-                    # timestamp = (time.time()-temp)
-                    # data_all.append(timestamp)
-                    ang = dxl_io.get_present_position([2,3]) + dxl_io.get_outputTorque([2,3])
-                    print(ang)
-                    data_all.append(ang)
-        #             prin
+# #                 if (time.time() - time_current2) > 0.043:
+#                     # timestamp = (time.time()-temp)
+#                     # data_all.append(timestamp)
+#                     ang = dxl_io.get_present_position([2,3]) + dxl_io.get_outputTorque([2,3])
+#                     print(ang)
+#                     data_all.append(ang)
+#         #             prin
                     
-                    time_current2 = time.time()
+#                     time_current2 = time.time()
                 # pp.pprint(data_all)
                 # print(counter)
             
