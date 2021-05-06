@@ -26,7 +26,7 @@ def on_message(client, userdata, message):
 #     print("Received: ", msg)
 
 broker = "broker.hivemq.com"
-topic = "fyp/sensors"
+topic = "fyp/demo"
 qos = 0
 
 client = paho.Client("client_001")     
@@ -40,8 +40,8 @@ q = queue.Queue()
 SPLINE = 1
 WINDOWSIZE = 5
 # MOTOR_ID = [1,2,3,4]
-MOTOR_ID = [1,2]
-angle_limit = [[150,350],[90,270]]
+MOTOR_ID = [1]
+angle_limit = [[-10,100],[90,270]]
 JOINTS = len(MOTOR_ID)
 GRIPPER_ID = 5
 
@@ -83,12 +83,12 @@ def init_motor():
         num = MOTOR_ID[joints]
         dxl_io.set_mode_dynaban({num:1})
 #             time.sleep(0.1)
-        dxl_io.enable_torque({num:1})
+        dxl_io.enable_torque({num:0})
 #             time.sleep(0.1)
 #         dxl_io.set_pid_gain({MOTOR_ID[joints]:[1,0,0]})
 #             time.sleep(0.1)
-    dxl_io.enable_torque({1:1,2:1,3:1,4:1})
-    dxl_io.set_angle_limit({1:[-10.0,150.0],2:[-90.0,90.0]})
+    dxl_io.enable_torque({1:0,2:0,3:0,4:0})
+    # dxl_io.set_angle_limit({1:[-10.0,150.0],2:[-90.0,90.0]})
 
 def reset_motor():
     
@@ -132,10 +132,10 @@ def go_to_start_pos(init_angle):
             for i in range(diff):
                 if (current_pos > start_angle):
                     dxl_io.set_goal_position({MOTOR_ID[joints]:current_pos - i})
-                    time.sleep(0.02) 
+                    time.sleep(0.03) 
                 else:
                     dxl_io.set_goal_position({MOTOR_ID[joints]:current_pos + i})
-                    time.sleep(0.02)
+                    time.sleep(0.03)
         q.empty()
 
 def setTraj1( id, duration, coeffs):
@@ -208,20 +208,11 @@ while loop_flag==1:
             init_timestamp = msg['timestamp']
 #             init_angle = [-msg['shoulder']['pitch'],msg['shoulder']['roll'],msg['shoulder']['yaw'],-msg['elbow']['pitch']-90]
 #             init_angle = [-msg['shoulder']['pitch'],-msg['elbow']['pitch']-90]
-            init_angle = [-msg['shoulder']['pitch'],msg['shoulder']['roll']]
+            init_angle = [-msg['shoulder']['pitch']]
             init_motor()
             go_to_start_pos(init_angle)
             first_val = False
             
-#         current_angle = []    
-#         for joints in range(len(MOTOR_ID)):
-#             current_angle.append(dxl_io.get_present_position([MOTOR_ID[joints]])[0])
-            
-#         print("########",current_angle)
-#         for joints in range(len(MOTOR_ID)):
-#             if ((abs(current_angle[joints]) > angle_limit[joints][0] and abs(current_angle[joints]) < angle_limit[joints][1])):
-#                 dxl_io.enable_torque({1:0,2:0,3:0,4:0})                  
-#                 sys.exit()
         else:
 
             if(msg['timestamp'] - init_timestamp >= SPLINE):
@@ -238,13 +229,12 @@ while loop_flag==1:
 
 
                 angles = math_utils_obj.real_time_moving_average(angles,WINDOWSIZE)
-    #             transformation = [[-1,270],[-1,270],[1,90],[1,90]]
 #                 transformation = [[-1,180],[1,180],[-1,180],[-1,90]]
-                transformation = [[-1,180],[1,180]]
+                transformation = [[-1,180]]
                 angles = math_utils_obj.angles_to_steps(angles, transformation)
                 coeff_angle = math_utils_obj.calculate_coefficients_angles(timestamps, angles)
-#                 print("angles coefficients")
-#                 pp.pprint(coeff_angle)
+                print("angles coefficients")
+                pp.pprint(coeff_angle)
 
 
             if coeff_angle != []:
@@ -323,7 +313,30 @@ while loop_flag==1:
 #                     dxl_io.set_copy_next_buffer(db.DXL_DICT_1)
                    
                     coeff_angle = []
-                    time.sleep(SPLINE)
+                    current_angle = []    
+                        
+                    
+                    my_time_start = time.time()
+                    while (time.time() - my_time_start < 1):
+                        for joints in range(len(MOTOR_ID)):
+                            current_angle = dxl_io.get_present_position([MOTOR_ID[joints]])[0]
+                            print(current_angle)
+                            if (current_angle < angle_limit[joints][0] or current_angle > angle_limit[joints][1]):
+                                print(joints, " out of range")
+                                dxl_io.set_mode_dynaban({1:0})
+                                if current_angle < angle_limit[joints][0]:
+                                    # go_to_start_pos([angle_limit[joints][0] + 2])
+                                    dxl_io.set_goal_position({1:angle_limit[joints][0] + 2})
+                                else:
+                                    # go_to_start_pos([angle_limit[joints][1] - 2])
+                                    dxl_io.set_goal_position({1:angle_limit[joints][1] - 2})
+                                time.sleep(1)
+
+                                # sys.exit()
+                                # dxl_io.enable_torque({1:0,2:0,3:0,4:0}) 
+                                
+                                                
+                    # time.sleep(SPLINE)
 #                     print("get a1 for traj1" ,dxl_io.get_a0_traj1([MOTOR_ID[0]]))
 #                     print("get a1 for traj2" ,dxl_io.get_a0_traj2([MOTOR_ID[0]]))
 
@@ -338,7 +351,7 @@ while loop_flag==1:
 
         timestamps.append(msg['timestamp'] - init_timestamp)
         angles[0].append(msg['shoulder']['pitch'])
-        angles[1].append(msg['shoulder']['roll'])
+#         angles[1].append(msg['shoulder']['roll'])
 #         angles[0].append(msg['shoulder']['pitch'])
     #     angles[3].append(msg['shoulder']/['pitch'])
 #         angles[1].append(msg['shoulder']['roll'])

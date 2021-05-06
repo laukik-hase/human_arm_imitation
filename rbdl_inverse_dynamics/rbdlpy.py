@@ -1,68 +1,65 @@
 import numpy as np
 import rbdl
-from scipy import signal
+import sys
 
-np.set_printoptions(suppress=True)
-urdf_filename = "manipulator4_meshed.urdf"
-csv_filename = "datasets/demo2.csv"
-model = rbdl.loadModel(urdf_filename, kwargs={"floating_base": False, "verbose": True})
-print("DoF: ", model.q_size)
-q_size = model.q_size
-qdot_size = model.qdot_size
+class rbdlpy:
+    def __init__(self, _urdf_filename):
+        self.model = rbdl.loadModel(_urdf_filename, kwargs={"floating_base": False, "verbose": False})
+        self.q_size = self.model.q_size
+        self.qdot_size = self.model.qdot_size
 
-csv_data = np.genfromtxt(csv_filename, delimiter=',')
-timeV = csv_data[:,0]
-qV = csv_data[:,1:]*np.pi/180
+    def inverse_dynamics(self, _timeV, _qV):
+        '''
+        _timeV in seconds
+        _qV in degrees
+        '''
+        n = len(_timeV)
+        _qV = _qV * np.pi/180
+        
+        # Take numerical derivatives of q to get estimates qDot (generalized velocities)
+        # and qDDot (generalized accelerations)
 
-# print(timeV)
-# print(qV)
+        qDotV = np.zeros(shape=(n, q_size), dtype=float)
+        qDDotV = np.zeros(shape=(n, q_size), dtype=float)
+        _tauV = np.zeros(shape=(n, q_size), dtype=float)
 
-# Read in the experimental data
-# Column  0: is time
-# Columns 1 ,..., N: correspond to q0, ..., qN
+        # The values for qdot and qddot are formed using numerical derivatives
 
-n = len(timeV)
+        for i in range(0, model.q_size):
+            qDotV[:, i] = np.gradient(_qV[:, i], timeV[:])
 
-# Take numerical derivatives of q to get estimates qDot (generalized velocities)
-# and qDDot (generalized accelerations)
+        for i in range(0, model.q_size):
+            qDDotV[:, i] = np.gradient(qDotV[:, i], timeV[:])
 
-qDotV = np.zeros(shape=(n, q_size), dtype=float)
-qDDotV = np.zeros(shape=(n, q_size), dtype=float)
-tauV = np.zeros(shape=(n, q_size), dtype=float)
+        q   = np.zeros(shape=(q_size),   dtype=float)
+        qd  = np.zeros(shape=(qdot_size),dtype=float)
+        qdd = np.zeros(shape=(qdot_size),dtype=float)
+        tau = np.zeros(shape=(qdot_size),dtype=float)
 
-# 3e. The values for qdot and qddot are formed using numerical derivatives
-# for i in range(1,n):
-#     qDotV[i] = (qV[i] - qV[i-1]) / (timeV[i] - timeV[i-1])
-#     qDDotV[i] = (qDotV[i] - qDotV[i-1]) / (timeV[i] - timeV[i-1])
+        for i in range(0,n):
+            for j in range(0, q_size):
+                q[j] = _qV[i, j]
+            for j in range(0, qdot_size):
+                qd[j] = qDotV[i, j]
+                qdd[j] = qDDotV[i, j]
+            # The inverse dynamics function in RBDL is called
+            rbdl.InverseDynamics(model, q, qd, qdd, tau)
+            
+            # The generalized force vector tau is copied to a matrix
+            for j in range(0, qdot_size):
+                _tauV[i, j] = tau[j]
 
-    # qDotV[:, i] = np.gradient(qV[:, i], timeV[:])
+        return _tauV
 
-for i in range(0, model.q_size):
-    qDotV[:, i] = np.gradient(qV[:, i], timeV[:])
+if __name__=="__main__":
+    urdf_filename = sys.argv[1]
+    my_rbdlpy = rbdlpy(urdf_filename)
 
-for i in range(0, model.q_size):
-    qDDotV[:, i] = np.gradient(qDotV[:, i], timeV[:])
-
-# print(qDDotV)
-
-q   = np.zeros(shape=(q_size),   dtype=float)
-qd  = np.zeros(shape=(qdot_size),dtype=float)
-qdd = np.zeros(shape=(qdot_size),dtype=float)
-tau = np.zeros(shape=(qdot_size),dtype=float)
-
-for i in range(0,n):
-    for j in range(0, q_size):
-        q[j] = qV[i, j]
-    for j in range(0, qdot_size):
-        qd[j] = qDotV[i, j]
-        qdd[j] = qDDotV[i, j]
-    # 3h. The inverse dynamics function in RBDL is called
-    # print(qdd)
+    csv_filename = sys.argv[2]
+    csv_data = np.genfromtxt(csv_filename, delimiter=',')
+    timeV = csv_data[:,0]
+    qV = csv_data[:,1:]
     
-    rbdl.InverseDynamics(model, q, qd, qdd, tau)
-    # 3i. The generalized force vector tau is copied to a matrix
-    for j in range(0, qdot_size):
-        tauV[i, j] = tau[j]
-
-print(tauV)
-np.savetxt('pytorque.csv', tauV, delimiter=',')
+    tauV = my_rbdlpy.inverse_dynamics(timeV, qV)
+    
+    np.savetxt('pytorque.csv', tauV, delimiter=',')

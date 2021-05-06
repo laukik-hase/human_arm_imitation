@@ -5,7 +5,7 @@ import arm_control_utils
 # DXL_ID = [1,2,3]
 DXL_ID = [1]
 
-my_arm_controller = arm_control_utils.arm_controller(DXL_ID,devicename='/dev/ttyUSB6', baudrate=1000000)
+my_arm_controller = arm_control_utils.arm_controller(DXL_ID,devicename='/dev/ttyUSB1', baudrate=1000000)
 
 
 
@@ -13,7 +13,7 @@ my_arm_controller.initialize_motors()
 my_arm_controller.enable_state_torque()
 
 # state = [2560]
-state = [3072]
+state = [1700]
 my_arm_controller.write_state(state)
 time.sleep(2)
 

@@ -19,7 +19,7 @@ demo_time = 0
 start_time = time.time()
 def sim_msg():
     global pitch, flag, demo_time, roll,yaw,epitch
-    if pitch > -90 and flag:
+    if pitch > -140 and flag:
         pitch -= 3
 #         roll -= 1
         yaw -= 3
