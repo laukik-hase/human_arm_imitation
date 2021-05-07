@@ -1,3 +1,4 @@
+import threading 
 import paho.mqtt.client as paho 
 import time
 import Queue as queue
@@ -9,13 +10,19 @@ import time
 import pypot.robot
 import pypot.dynamixel
 import snoop 
-import threading
+# import threading
 import sys
+import Queue as queue
+import paho.mqtt.client as paho
 
-pp = pprint.PrettyPrinter(indent=4)
-# import rbdl
-# import manip motion
+exitFlag = 0
+broker = "broker.hivemq.com"
+topic = "fyp/demo"
+qos = 1
 
+
+
+ports = pypot.dynamixel.get_available_ports()
 
 def on_connect(client, userdata, flags, rc):
     client.subscribe(topic, qos)
@@ -23,19 +30,27 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, message):
     msg = message.payload.decode("utf-8")
     q.put(msg)
-#     print("Received: ", msg)
 
-broker = "broker.hivemq.com"
-topic = "fyp/demo"
-qos = 0
 
-client = paho.Client("client_001")     
-client.on_connect=on_connect
-client.on_message = on_message        
-client.connect(broker)      
-client.loop_start()
-loop_flag=1
+client = paho.Client("client_001")
+client.on_connect = on_connect
+client.on_message = on_message
+
 q = queue.Queue()
+
+client.connect(broker )
+client.loop_start()
+
+if not ports:
+    raise IOError('no port found!')
+
+print('ports found', ports)
+
+print('connecting on the first available port:', ports[0])
+
+dxl_io = pypot.dynamixel.DxlIO(ports[0])
+#         dxl_io.enable_torque({self.GRIPPER_ID: 1})
+time.sleep(0.1)    
 
 SPLINE = 1
 WINDOWSIZE = 5
@@ -62,21 +77,7 @@ once = True
 last_flag = True
 coeff_angle = []
 
-ports = pypot.dynamixel.get_available_ports()
-
-if not ports:
-    raise IOError('no port found!')
-
-print('ports found', ports)
-
-print('connecting on the first available port:', ports[0])
-
-dxl_io = pypot.dynamixel.DxlIO(ports[0])
-#         dxl_io.enable_torque({self.GRIPPER_ID: 1})
-time.sleep(0.1)    
-
-
-def init_motor():
+def init_motor(MOTOR_ID):
 
     for joints in range(len(MOTOR_ID)):
 
@@ -90,7 +91,7 @@ def init_motor():
     dxl_io.enable_torque({1:0,2:0,3:0,4:0})
     # dxl_io.set_angle_limit({1:[-10.0,150.0],2:[-90.0,90.0]})
 
-def reset_motor():
+def reset_motor(MOTOR_ID):
     
     for joints in range(len(MOTOR_ID)):
 
@@ -100,7 +101,7 @@ def reset_motor():
     time.sleep(0.1)
     init_motor()
     
-def clear_reg():
+def clear_reg(MOTOR_ID):
 
     for joints in range(len(MOTOR_ID)):
         
@@ -110,7 +111,7 @@ def clear_reg():
         dxl_io.set_a3_traj1({MOTOR_ID[joints] : 0.0})
                     
 
-def rewrite_reg(traj2):
+def rewrite_reg(MOTOR_ID,traj2):
     
     for joints in range(len(MOTOR_ID)):
         
@@ -120,7 +121,7 @@ def rewrite_reg(traj2):
         dxl_io.set_a3_traj1({MOTOR_ID[joints] : traj2[joints][3]})
 #                     traj2 = []
     
-def go_to_start_pos(init_angle):
+def go_to_start_pos(MOTOR_ID,init_angle):
         
         for joints in range(len(MOTOR_ID)):
             num = MOTOR_ID[joints]
@@ -132,10 +133,10 @@ def go_to_start_pos(init_angle):
             for i in range(diff):
                 if (current_pos > start_angle):
                     dxl_io.set_goal_position({MOTOR_ID[joints]:current_pos - i})
-                    time.sleep(0.2) 
+                    time.sleep(0.03) 
                 else:
                     dxl_io.set_goal_position({MOTOR_ID[joints]:current_pos + i})
-                    time.sleep(0.2)
+                    time.sleep(0.03)
         q.empty()
 
 def setTraj1( id, duration, coeffs):
@@ -193,10 +194,26 @@ def setTraj2(id, duration, coeffs):
             print("nb errors2 = ", errorCounter)
             break
 
-                
-while loop_flag==1:
-        # threading.enumerate()
-#     try: 
+            
+# Class Thread, taking the thread name and the thread function
+class Thread (threading.Thread):
+    def __init__(self, threadID, name, func):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.name = name
+        self.func = func # The thread function is passed as a pointer
+
+    def run(self):
+        self.func(self.name)
+
+
+
+        
+def manip_motion(threadName):
+    
+    while True:
+        if exitFlag:
+            threadName.exit()
         message = q.get()
         msg = json.loads(message)
 #         print(msg['timestamp'])
@@ -315,7 +332,7 @@ while loop_flag==1:
 #                     coeff_angle = []
 #                     current_angle = []    
                         
-#                     time.sleep(1)
+                    
 #                     my_time_start = time.time()
 #                     while (time.time() - my_time_start < 1):
 #                         for joints in range(len(MOTOR_ID)):
@@ -330,36 +347,51 @@ while loop_flag==1:
 #                                 else:
 #                                     # go_to_start_pos([angle_limit[joints][1] - 2])
 #                                     dxl_io.set_goal_position({1:angle_limit[joints][1] - 2})
-                                
+#                                 time.sleep(1)
 
-                                # sys.exit()
-                                # dxl_io.enable_torque({1:0,2:0,3:0,4:0}) 
+#                                 # sys.exit()
+#                                 # dxl_io.enable_torque({1:0,2:0,3:0,4:0}) 
                                 
                                                 
-                    # time.sleep(SPLINE)
-#                     print("get a1 for traj1" ,dxl_io.get_a0_traj1([MOTOR_ID[0]]))
-#                     print("get a1 for traj2" ,dxl_io.get_a0_traj2([MOTOR_ID[0]]))
+#                     # time.sleep(SPLINE)
+# #                     print("get a1 for traj1" ,dxl_io.get_a0_traj1([MOTOR_ID[0]]))
+# #                     print("get a1 for traj2" ,dxl_io.get_a0_traj2([MOTOR_ID[0]]))
 
 
 
-                # empty
-                timestamps = []
-                angles = []
-                [angles.append([]) for j in range(JOINTS)]
-                torques = []
-                [torques.append([]) for j in range(JOINTS)]
+#                 # empty
+#                 timestamps = []
+#                 angles = []
+#                 [angles.append([]) for j in range(JOINTS)]
+#                 torques = []
+#                 [torques.append([]) for j in range(JOINTS)]
 
-        timestamps.append(msg['timestamp'] - init_timestamp)
-        angles[0].append(msg['shoulder']['pitch'])
-#         angles[1].append(msg['shoulder']['roll'])
+#         timestamps.append(msg['timestamp'] - init_timestamp)
 #         angles[0].append(msg['shoulder']['pitch'])
-    #     angles[3].append(msg['shoulder']/['pitch'])
-#         angles[1].append(msg['shoulder']['roll'])
-#         angles[2].append(msg['shoulder']['yaw'])
-#         angles[3].append(msg['elbow']['pitch'])
-#     except:
-#         print("termios error")
-#         pass
+# #         angles[1].append(msg['shoulder']['roll'])
+# #         angles[0].append(msg['shoulder']['pitch'])
+#     #     angles[3].append(msg['shoulder']/['pitch'])
+# #         angles[1].append(msg['shoulder']['roll'])
+# #         angles[2].append(msg['shoulder']['yaw'])
+# #         angles[3].append(msg['elbow']['pitch'])
+# #     except:
+# #         print("termios error")
+# #         pass
 
-client.disconnect()
-client.loop_stop()
+        message = q.get()
+        msg = json.loads(message)
+        # Do your processing here
+        print(msg)
+        # TODO: Capture values for 1 sec interval; as soon as this is done, acquire a lock for the manipulator motion
+        # Only after completion of motion, the lock shall be set free.
+
+
+manip_thread = Thread(1, "manip_thread", manip_motion)
+manip_thread.start()
+        
+# exit_flag = 1
+# client.loop_stop()
+# client.disconnect()
+
+
+

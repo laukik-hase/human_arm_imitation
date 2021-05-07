@@ -7,7 +7,6 @@ class rbdlpy:
         self.model = rbdl.loadModel(_urdf_filename, kwargs={"floating_base": True, "verbose": True})
         self.q_size = self.model.q_size
         self.qdot_size = self.model.qdot_size
-        print("DOF: ", self.q_size)
 
     def inverse_dynamics(self, _timeV, _qV):
         '''
@@ -26,19 +25,18 @@ class rbdlpy:
 
         # The values for qdot and qddot are formed using numerical derivatives
 
-        for i in range(1, n):
-            qDotV[i,:] = ( _qV[i,:] - _qV[i-1,:] ) / ( timeV[i] - timeV[i-1] )
+        # for i in range(1, n):
+        #     qDotV[i,:] = ( _qV[i,:] - _qV[i-1,:] ) / ( timeV[i] - timeV[i-1] )
             
-        for i in range(1, n):
-            qDDotV[i,:] = ( qDotV[i,:] - qDotV[i-1,:] ) / ( timeV[i] - timeV[i-1] )
+        # for i in range(1, n):
+        #     qDDotV[i,:] = ( qDotV[i,:] - qDotV[i-1,:] ) / ( timeV[i] - timeV[i-1] )
 
-        # for i in range(0, self.q_size):
-        #     qDotV[:, i] = np.gradient(_qV[:, i], timeV[:])
+        for i in range(0, self.q_size):
+            qDotV[:, i] = np.gradient(_qV[:, i], _timeV[:])
 
-        # for i in range(0, self.q_size):
-        #     qDDotV[:, i] = np.gradient(qDotV[:, i], timeV[:])
+        for i in range(0, self.q_size):
+            qDDotV[:, i] = np.gradient(qDotV[:, i], _timeV[:])
 
-        print("acce", qDDotV)
         q   = np.zeros(shape=(self.q_size),   dtype=float)
         qd  = np.zeros(shape=(self.qdot_size),dtype=float)
         qdd = np.zeros(shape=(self.qdot_size),dtype=float)
