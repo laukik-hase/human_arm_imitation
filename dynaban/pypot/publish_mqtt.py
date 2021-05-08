@@ -8,10 +8,9 @@ from math import *
 
 
 import paho.mqtt.client as paho
-
 broker = "broker.hivemq.com"
-topic = "fyp/demo"
-qos = 0
+topic = "fyp/qos"
+qos = 1
 msg_interval = 3
 flag = True
 pitch,roll,yaw, epitch =0,0,0,0 
@@ -72,17 +71,17 @@ def wait_for_pub(client, msgType, period=0.1, wait_time=40, running_loop=False):
 
 def c_publish(client, topic, out_message, qos):
     res, mid = client.publish(topic, out_message, qos, retain = False)
-    if res == 0:
-        if wait_for_pub(client, "PUBACK", running_loop=True):
-            if mid == client.mid_value:
-                client.puback_flag = False
-            else:
-                raise SystemExit("not got correct puback mid so quitting")
-        else:
-            raise SystemExit("not got puback so quitting")
+    # if res == 0:
+    #     if wait_for_pub(client, "PUBACK", running_loop=True):
+    #         if mid == client.mid_value:
+    #             client.puback_flag = False
+    #         else:
+    #             raise SystemExit("not got correct puback mid so quitting")
+    #     else:
+    #         raise SystemExit("not got puback so quitting")
 
 
-client = paho.Client("Client - 001")
+client = paho.Client("Client - 001", clean_session=False)
 
 client.on_publish = on_publish
 client.on_message = on_message
@@ -92,6 +91,7 @@ client.mid_value = None
 
 print("Connecting to broker: ", broker)
 client.connect(broker, 1883)
+
 client.loop_start()
 
 print("Publishing to", topic)
