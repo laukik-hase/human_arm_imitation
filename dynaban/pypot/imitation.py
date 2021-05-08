@@ -5,8 +5,7 @@ import json
 import pypot.robot
 import pypot.dynamixel
 import matplotlib.pyplot as plt
-import manipulator_math_utils_rbdl as mmu
-import rbdlpy
+import manipulator_math_utils as mmu
 
 import sys
 import csv
@@ -23,32 +22,39 @@ DXL_DICT_0      = dict(zip(MOTOR_ID, [0]*JOINTS))
 
 csv_file = sys.argv[1]
 urdf_file = "manipulator4_gripper.urdf"
-transformations = [[-1,180],[-1,180], [-1,180],[-1,180]]
+transformations = [[-1,180],[1,180], [-1,180],[-1,180]]
+# transformations = [[-1,180], [-1,180]]
 # transformations = [[-1,180],[-1,180],[-1,180]]
 my_manipulator_math_utils = mmu.manipulator_math_utils(JOINTS)
 # coeff_angle, coeff_torque = my_manipulator_math_utils.calculate_coeffs(csv_file,False,[[1,90]])
 # coeff_angle, coeff_torque = my_manipulator_math_utils.calculate_coeffs(csv_file,False,[[-1,270],[-1,270],[1,180]])
 # transformations = [[-1,180],[1,180]] P and Y 
-coeff_angle, coeff_torque = my_manipulator_math_utils.calculate_coeffs(csv_file, transformations, urdf_file)
+is_with_torque = False
+if is_with_torque:
+    coeff_angle, coeff_torque = my_manipulator_math_utils.calculate_coeffs(csv_file, False, transformations, with_torque=is_with_torque)
+else:
+    coeff_angle = my_manipulator_math_utils.calculate_coeffs(csv_file, False, transformations, with_torque=is_with_torque)
+
 pp.pprint(coeff_angle)
 
 start_angles = my_manipulator_math_utils.start_angles
 # pp.pprint(coeff_angle)
 # pp.pprint(coeff_torque)
 
-ports = pypot.dynamixel.get_available_ports()
-# state_file = open("demo2_imitation_wt.csv", "w")
-state_file = open('demo2_imitation_wt_final.csv', 'w')
-str_state = []
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# ports = pypot.dynamixel.get_available_ports()
+# # state_file = open("demo2_imitation_wt.csv", "w")
+# state_file = open('demo2_imitation_wt_final.csv', 'w')
+# str_state = []
 
-if not ports:
-    raise IOError('no port found!')
+# if not ports:
+#     raise IOError('no port found!')
 
-print('ports found', ports)
+# print('ports found', ports)
 
-print('connecting on the first available port:', ports[0])
+# print('connecting on the first available port:', ports[0])
 
-dxl_io = pypot.dynamixel.DxlIO(ports[0],baudrate = 1000000)
+# dxl_io = pypot.dynamixel.DxlIO(ports[0],baudrate = 1000000)
 # dxl_io.dxl_to_baudrate(1)
 def setTraj1(id, duration, coeffs):
     errorCounter = 0
@@ -185,23 +191,16 @@ def go_to_start_pos(id, init_angle):
             else:
                 dxl_io.set_goal_position({id[joints]:current_pos + i})
                 time.sleep(0.05)
-print(start_angles)
-init_angle = [-start_angles[0],-start_angles[1], start_angles[2],-start_angles[3]]
+# print(start_angles)
+# init_angle = [-start_angles[0],start_angles[1], -start_angles[2],-start_angles[3]]
+# init_angle = [-start_angles[0],-start_angles[1]]
 
 # init(MOTOR_ID)
-print(coeff_angle[0][0])
+# print(coeff_angle[0][0])
+
 # go_to_start_pos(MOTOR_ID, init_angle)
                 
-condition = True
-# dxl_io.enable_torque({1:1})
-data_all = []
-
-def rewrite_reg(id, traj2):
-        
-        dxl_io.set_a0_traj1({MOTOR_ID[id] : traj2[id][0]})
-        dxl_io.set_a1_traj1({MOTOR_ID[id] : traj2[id][1]})
-        dxl_io.set_a2_traj1({MOTOR_ID[id] : traj2[id][2]})
-        dxl_io.set_a3_traj1({MOTOR_ID[id] : traj2[id][3]})
+# data_all = []
 
 def execute():
     last_flag = True
@@ -232,10 +231,10 @@ def execute():
             # dxl_io.set_copy_next_buffer({3:1, 4:1})
             # dxl_io.set_mode_dynaban({3:3, 4:3})
             # dxl_io.set_mode_dynaban(DXL_DICT_3)
-            # print("get a1 for traj1" ,dxl_io.get_a0_traj1([1]))
-            # print("get a1 for traj2" ,dxl_io.get_a0_traj2([1]))
-            
-
+            print("get a1 for traj1" ,dxl_io.get_a0_traj1([1]))
+            print("get a1 for traj2" ,dxl_io.get_a0_traj2([1]))
+            time.sleep(1)
+            print(dxl_io.get_present_position([1]))
 #             traj1 = []
 #             for joints in range(len(MOTOR_ID)):
                 

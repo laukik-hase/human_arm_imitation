@@ -35,7 +35,7 @@ class manipulator_math_utils:
                     if(_with_torque): _torques[i].append(row_float[1+self.JOINTS+i])
 
         self.start_angles = [_angles[i][0] for i in range(self.JOINTS)]
-        print(self.start_angles)
+        # print(self.start_angles)
         if(_with_torque): return _timestamps, _angles, _torques
         return _timestamps, _angles
 
@@ -69,7 +69,7 @@ class manipulator_math_utils:
         # print(_timesplits)
         return _timesplits
 
-    def pad_data(self, _timestamps, _angles, _torques, _timesplits):
+    def pad_data_angle_torque(self, _timestamps, _angles, _torques, _timesplits):
         if (_timesplits[-1] is not len(_timestamps)-1):
             padding_delta_time = _timestamps[_timesplits[-1] + 1] - _timestamps[_timesplits[-1]]
             no_of_padding  = int( ( math.ceil(_timestamps[-1]) - _timestamps[-1] ) / padding_delta_time )
@@ -79,6 +79,16 @@ class manipulator_math_utils:
                 _torques[j].extend([_torques[j][-1]] * no_of_padding)
             _timesplits.append(len(_timestamps)-1)
         return _timestamps, _angles, _torques, _timesplits
+
+    def pad_data_angle(self, _timestamps, _angles, _timesplits):
+        if (_timesplits[-1] is not len(_timestamps)-1):
+            padding_delta_time = _timestamps[_timesplits[-1] + 1] - _timestamps[_timesplits[-1]]
+            no_of_padding  = int( ( math.ceil(_timestamps[-1]) - _timestamps[-1] ) / padding_delta_time )
+            _timestamps.extend(np.arange(_timestamps[-1] + padding_delta_time, math.ceil(_timestamps[-1]), padding_delta_time))
+            for j in range(self.JOINTS):
+                _angles[j].extend([_angles[j][-1]] * no_of_padding)
+            _timesplits.append(len(_timestamps)-1)
+        return _timestamps, _angles, _timesplits
 
     def get_coeffs_for_angle(self, _timestamps, _angles, _timesplits):
         _coeffs_angle = []
@@ -168,7 +178,9 @@ class manipulator_math_utils:
         if not angle_in_steps: angles = self.angles_to_steps(angles, transformations)
         angles = self.padded_moving_average(angles, moving_average_windowsize)
         timesplits = self.get_timesplits(timestamps, spline)
-        timestamps, angles, torques, timesplits = self.pad_data(timestamps, angles, torques, timesplits)
+
+        if (with_torque): timestamps, angles, torques, timesplits = self.pad_data_angle_torque(timestamps, angles, torques, timesplits)
+        else: timestamps, angles, timesplits = self.pad_data_angle(timestamps, angles, timesplits)
         # pp.pprint(timestamps)
         if(with_torque):
             coeffs_angle, coeffs_torque = self.get_coeffs_for_angle_torque(timestamps, angles, torques, timesplits)

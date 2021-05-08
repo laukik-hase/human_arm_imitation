@@ -9,12 +9,15 @@ from math import *
 
 import paho.mqtt.client as paho
 broker = "broker.hivemq.com"
-topic = "fyp/qos"
-qos = 1
+topic = "fyp/test"
+qos = 2
 msg_interval = 3
 flag = True
 pitch,roll,yaw, epitch =0,0,0,0 
 demo_time = 0
+
+DELAY = 0.03
+
 start_time = time.time()
 def sim_msg():
     global pitch, flag, demo_time, roll,yaw,epitch
@@ -34,11 +37,11 @@ def sim_msg():
         flag = True
     demo_time += 0.03    
     msg_dict = {
-        'timestamp': time.time()-start_time,
+        'timestamp': demo_time,
         'shoulder': {'roll' : 0.0, 'pitch': pitch, 'yaw': 0.0},
         'elbow': {'pitch': 0.0}
     }
-    
+#     print(msg_dict)
     msg_json = json.dumps(msg_dict, indent=4)
     return msg_json
 
@@ -81,7 +84,7 @@ def c_publish(client, topic, out_message, qos):
     #         raise SystemExit("not got puback so quitting")
 
 
-client = paho.Client("Client - 001", clean_session=False)
+client = paho.Client("Client - 001", clean_session=True)
 
 client.on_publish = on_publish
 client.on_message = on_message
@@ -101,6 +104,7 @@ start = time.time()
 while True:
     msg = sim_msg()
     c_publish(client, topic, msg, qos)
+    time.sleep(DELAY)
 
 client.loop_stop()
 client.disconnect()
