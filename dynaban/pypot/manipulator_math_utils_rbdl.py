@@ -4,6 +4,8 @@ from scipy.optimize import curve_fit
 import csv
 import sys
 import pprint
+import rbdlpy
+
 pp = pprint.PrettyPrinter(indent=4)
 
 def _get_polynomial(t, a3, a2, a1, a0):
@@ -14,29 +16,22 @@ class manipulator_math_utils:
         self.JOINTS = joints
         self.start_angles = []
 
-    def read_csv_file(self, _inp, _with_torque=True):
+    def read_csv_file(self, _csv_file, _urdf_file=""):
         # timestamp, angles..n, torque..n
-        _timestamps = []
-        _angles = []
-        if (_with_torque): _torques = []
+        angle_data = np.genfromtxt(_csv_file, delimiter=',')
+        _timestamps = angle_data[:,0]
+        _angles = angle_data[:,1:]
+        if(_urdf_file != ""):
+            rbdl_obj = rbdlpy.rbdlpy(_urdf_file)
+            _torques = rbdl_obj.inverse_dynamics(_timestamps, _angles)
+            _torques = np.transpose(_torques).tolist()
 
-        for i in range(self.JOINTS):
-            _angles.append([])
-            if(_with_torque): _torques.append([])
-
-        with open(_inp, 'r') as file:
-            reader = csv.reader(file)
-            for row in reader:
-                row_float = list(map(float, row))
-                # print(row_float)
-                _timestamps.append(row_float[0])
-                for i in range(self.JOINTS):
-                    _angles[i].append(row_float[1+i])
-                    if(_with_torque): _torques[i].append(row_float[1+self.JOINTS+i])
+        _angles = np.transpose(_angles).tolist()
+        _timestamps = _timestamps.tolist()
 
         self.start_angles = [_angles[i][0] for i in range(self.JOINTS)]
         print(self.start_angles)
-        if(_with_torque): return _timestamps, _angles, _torques
+        if(_urdf_file != ""): return _timestamps, _angles, _torques
         return _timestamps, _angles
 
 
@@ -152,25 +147,18 @@ class manipulator_math_utils:
     # main Program
 
 
-    def calculate_coeffs(self, file_name, angle_in_steps=True, transformations=[], with_torque=True, moving_average_windowsize=5, spline=1):
-        file_type = file_name.split(".")[-1]
-        if(file_type == "csv"):
-            data = self.read_csv_file(file_name, with_torque)
-        elif(file_type == "json"):
-            # to be implemented
-            pass
-        else:
-            print("Wrong file format. Provide csv or json files only")
+    def calculate_coeffs(self, _csv_file, transformations=[], _urdf_file="", moving_average_windowsize=5, spline=1):
+        data = self.read_csv_file(_csv_file, _urdf_file)
 
-        if(with_torque): timestamps, angles, torques = data
+        if(_urdf_file): timestamps, angles, torques = data
         else: timestamps, angles = data
 
-        if not angle_in_steps: angles = self.angles_to_steps(angles, transformations)
+        if (transformations): angles = self.angles_to_steps(angles, transformations)
         angles = self.padded_moving_average(angles, moving_average_windowsize)
         timesplits = self.get_timesplits(timestamps, spline)
         timestamps, angles, torques, timesplits = self.pad_data(timestamps, angles, torques, timesplits)
         # pp.pprint(timestamps)
-        if(with_torque):
+        if(_urdf_file):
             coeffs_angle, coeffs_torque = self.get_coeffs_for_angle_torque(timestamps, angles, torques, timesplits)
             return coeffs_angle, coeffs_torque
         else:

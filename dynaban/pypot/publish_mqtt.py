@@ -18,15 +18,15 @@ demo_time = 0
 start_time = time.time()
 def sim_msg():
     global pitch, flag, demo_time, roll,yaw,epitch
-    if pitch > -140 and flag:
-        pitch -= 3
+    if pitch > -90 and flag:
+        pitch -= 1
 #         roll -= 1
         yaw -= 3
         epitch -= 3
         
     elif pitch < 0 :
         flag =False
-        pitch += 3
+        pitch += 1
 #         roll += 1
         yaw += 3
         epitch += 3
@@ -35,8 +35,8 @@ def sim_msg():
     demo_time += 0.03    
     msg_dict = {
         'timestamp': time.time()-start_time,
-        'shoulder': {'roll' : 0.0, 'pitch': pitch, 'yaw': yaw},
-        'elbow': {'pitch': epitch}
+        'shoulder': {'roll' : 0.0, 'pitch': pitch, 'yaw': 0.0},
+        'elbow': {'pitch': 0.0}
     }
     
     msg_json = json.dumps(msg_dict, indent=4)

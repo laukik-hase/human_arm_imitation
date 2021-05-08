@@ -3,7 +3,7 @@ import arm_control_utils
 
 # offset = [180 180 90] # niryo
 # DXL_ID = [1,2,3]
-DXL_ID = [1]
+DXL_ID = [2]
 
 my_arm_controller = arm_control_utils.arm_controller(DXL_ID,devicename='/dev/ttyUSB0', baudrate=1000000)
 

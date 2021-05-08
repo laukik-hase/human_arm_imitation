@@ -5,9 +5,14 @@ import pypot.dynamixel
 '''
 home_pos = [90,0,0,0]
 shoulder_pitch : pledge up : 0 neeche -ve upar +ve
-roll: bahar negative
+roll: bahar negative (galat lagra he positive hona chahiye)
 yaw : pledge up = 0 , left bahar = +ve
 elbow_pitch : pledge up : 0 neeche -ve
+'''
+
+'''
+shoulder_roll:  bahar   -90(pypot) 1024(dynsdk)
+                andhar   90(pypot) 3072(dynsdk)
 '''
 class dynaban:
     def __init__(self, motor_id, gripper_id):
