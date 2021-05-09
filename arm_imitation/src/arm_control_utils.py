@@ -141,6 +141,18 @@ class arm_controller:
             _state[i] = dxl_present_position % 4096
         return _state
 
+    def get_present_position(self, ID):
+        dxl_present_position, dxl_comm_result, dxl_error = self.packetHandler.read2ByteTxRx(self.portHandler, ID, self.ADDR_MX_PRESENT_POSITION)
+        self.success(dxl_comm_result, dxl_error, ID)
+        dxl_present_position = dxl_present_position % 4096
+        return dxl_present_position
+
+    def set_goal_position(self, ID, _value):
+        dxl_comm_result, dxl_error = self.packetHandler.write2ByteTxRx(self.portHandler, ID, self.ADDR_MX_GOAL_POSITION, _value)
+        if self.success(dxl_comm_result, dxl_error):
+            print("Goal position set self.successfully for Dynamixel#%d" % ID)
+
+
     def initialize_motors(self):
         # Open port
         if self.portHandler.openPort():

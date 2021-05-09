@@ -16,20 +16,20 @@ flag = True
 pitch,roll,yaw, epitch =0,0,0,0 
 demo_time = 0
 
-DELAY = 0.03
+DELAY = 0.05
 
 start_time = time.time()
 def sim_msg():
     global pitch, flag, demo_time, roll,yaw,epitch
     if pitch > -90 and flag:
-        pitch -= 1
+        pitch -= 2
 #         roll -= 1
         yaw -= 3
         epitch -= 3
         
     elif pitch < 0 :
         flag =False
-        pitch += 1
+        pitch += 2
 #         roll += 1
         yaw += 3
         epitch += 3
