@@ -14,7 +14,8 @@ import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
 SPLINE = 10000
-MOTOR_ID = [1,2,4,3]
+MOTOR_ID = [1,2,4]
+# GRIPPER_ID = 5
 JOINTS = len(MOTOR_ID)
 DXL_DICT_3      = dict(zip(MOTOR_ID, [3]*JOINTS))
 DXL_DICT_1      = dict(zip(MOTOR_ID, [1]*JOINTS))
@@ -22,7 +23,7 @@ DXL_DICT_0      = dict(zip(MOTOR_ID, [0]*JOINTS))
 
 csv_file = sys.argv[1]
 urdf_file = "manipulator4_gripper.urdf"
-transformations = [[-1,180],[1,180], [1,180],[-1,180]]
+transformations = [[-1,90],[1,180], [-1,180]]
 # transformations = [[-1,180], [-1,180]]
 # transformations = [[-1,180],[-1,180],[-1,180]]
 my_manipulator_math_utils = mmu.manipulator_math_utils(JOINTS)
@@ -36,13 +37,15 @@ my_manipulator_math_utils = mmu.manipulator_math_utils(JOINTS)
 # else:
 #     coeff_angle = my_manipulator_math_utils.calculate_coeffs(csv_file, False, transformations, with_torque=is_with_torque)
 
-is_with_torque = True
+is_with_torque = False
 if is_with_torque:
     coeff_angle, coeff_torque = my_manipulator_math_utils.calculate_coeffs(csv_file, transformations, urdf_file)
 else:
     coeff_angle = my_manipulator_math_utils.calculate_coeffs(csv_file, transformations)
 
-pp.pprint(coeff_angle)
+# pp.pprint(coeff_angle)
+
+# gripper_state = np.genfromtxt(csv_file, delimiter=',')[:,]
 
 start_angles = my_manipulator_math_utils.start_angles
 # pp.pprint(coeff_angle)
@@ -177,7 +180,9 @@ def init(id):
     dxl_io.set_mode_dynaban(DXL_DICT_0)
     time.sleep(0.1)
     dxl_io.enable_torque(DXL_DICT_1)
+    dxl_io.enable_torque({3:1})
     time.sleep(0.1)
+    
 #         print(joints)
         # dxl_io.set_pid_gain({id[joints]:[1,0,0]})
         # time.sleep(0.1)
@@ -199,7 +204,7 @@ def go_to_start_pos(id, init_angle):
                 dxl_io.set_goal_position({id[joints]:current_pos + i})
                 time.sleep(0.05)
 # print(start_angles)
-init_angle = [-start_angles[0],start_angles[1], start_angles[2], -start_angles[3]]
+init_angle = [start_angles[0] + 90,start_angles[1], -start_angles[2]]
 # init_angle = [-start_angles[0],-start_angles[1]]
 
 init(MOTOR_ID)
@@ -224,7 +229,7 @@ def execute():
                     setTorque1(MOTOR_ID[joints],SPLINE, [coeff_torque[joints][traj][3],coeff_torque[joints][traj][2],coeff_torque[joints][traj][1],coeff_torque[joints][traj][0]])
 
             dxl_io.set_mode_dynaban(DXL_DICT_3) 
-            # dxl_io.set_mode_dynaban({3:3, 4:3})
+#             dxl_io.set_mode_dynaban({1:3, 2:3})
 
 
         else:
@@ -236,7 +241,7 @@ def execute():
             # print("elbow coeff: ",coeff_angle[3][traj])
 
             dxl_io.set_copy_next_buffer(DXL_DICT_1)
-            # dxl_io.set_copy_next_buffer({3:1, 4:1})
+#             dxl_io.set_copy_next_buffer({1:1, 2:1})
             # dxl_io.set_mode_dynaban({3:3, 4:3})
             # dxl_io.set_mode_dynaban(DXL_DICT_3)
             # print("get a1 for traj1" ,dxl_io.get_a0_traj1([4]))
@@ -245,7 +250,7 @@ def execute():
             while(time.time() - start_time < 1):
                 
                 # recorded_angles.append(dxl_io.get_present_position([3]))
-                print(dxl_io.get_present_position([3]))
+#                 print(dxl_io.get_present_position([2])[0])
                 time.sleep(0.04)
                 pass
 
