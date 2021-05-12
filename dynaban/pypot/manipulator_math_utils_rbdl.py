@@ -140,7 +140,7 @@ class manipulator_math_utils:
         # [
         #     motor1
         #     [
-        #         first 1s values
+        #         first 1 second values
         #         [
 
         #         ],ar

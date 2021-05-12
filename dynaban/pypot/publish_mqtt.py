@@ -8,28 +8,28 @@ from math import *
 
 
 import paho.mqtt.client as paho
-broker = "broker.hivemq.com"
+broker = "test.mosquitto.org"
 topic = "fyp/test"
-qos = 2
+qos = 0
 msg_interval = 3
 flag = True
 pitch,roll,yaw, epitch =0,0,0,0 
 demo_time = 0
 
 DELAY = 0.05
-
+PITCH_DIFF = 10
 start_time = time.time()
 def sim_msg():
     global pitch, flag, demo_time, roll,yaw,epitch
     if pitch > -90 and flag:
-        pitch -= 2
+        pitch -= PITCH_DIFF
 #         roll -= 1
         yaw -= 3
         epitch -= 3
         
     elif pitch < 0 :
         flag =False
-        pitch += 2
+        pitch += PITCH_DIFF
 #         roll += 1
         yaw += 3
         epitch += 3

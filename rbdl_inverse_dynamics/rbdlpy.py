@@ -65,6 +65,15 @@ if __name__=="__main__":
 
     csv_filename = sys.argv[2]
     csv_data = np.genfromtxt(csv_filename, delimiter=',')
+    # time_delay = 20
+    # csv_data = np.array([    np.linspace(0,1,time_delay),
+    #                 np.linspace(0,90,time_delay),
+    #                 np.linspace(0,90,time_delay),
+    #                 np.linspace(0,90,time_delay),
+    #                 np.linspace(0,90,time_delay)
+
+    # ])
+    # csv_data = np.transpose(csv_data)
     timeV = csv_data[:,0]
     qV = csv_data[:,1:]
     

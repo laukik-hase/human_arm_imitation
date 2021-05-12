@@ -7,15 +7,21 @@ import time
 import threading
 import sys
 import arm_control_utils
-import manipulator_math_utils
 import signal
+import numpy as np
 
 def signal_handler(signal, frame):
-    print('You pressed Ctrl+C!')
-    my_arm_controller.disable_state_torque()
-    my_arm_controller.stop_motors()
+    if RUN_MOTORS:
+        print("Stopping dynamixel...")
+        my_arm_controller.disable_state_torque()
+        for id in UNUSED_ID:
+            my_arm_controller.disable_torque(id)
+        my_arm_controller.disable_torque(GRIPPER_ID)
+        my_arm_controller.stop_motors()
+    print("Stopping MQTT...")
     client.loop_stop()
     client.disconnect()
+    print("Goodbye!!!")
     sys.exit(0)
 
 def on_message(client, userdata, message):
@@ -26,6 +32,32 @@ def on_message(client, userdata, message):
 
 def on_connect(client, userdata, flags, rc):
     client.subscribe(topic, qos)
+
+def gripper_move(_gripper_state):
+    if _gripper_state:
+        print("Closing gripper...")
+        start = my_arm_controller.get_present_position(GRIPPER_ID)
+        print(start)
+        cur = int(start)
+        while(cur > CLOSE_LIMIT):
+            cur = cur - 1
+            my_arm_controller.set_goal_position(GRIPPER_ID, cur)
+            time.sleep(0.01)
+            print(cur)
+        print("Gripper closed")
+        print(my_arm_controller.get_present_position(GRIPPER_ID))
+
+    else:
+        print("Opening gripper...")
+        start = my_arm_controller.get_present_position(GRIPPER_ID)
+        print(start)
+        cur = int(start)
+        while(cur < OPEN_LIMIT):
+            cur = cur + 1
+            my_arm_controller.set_goal_position(GRIPPER_ID, cur)
+            time.sleep(0.01)
+        print("Gripper opened")
+        print(my_arm_controller.get_present_position(GRIPPER_ID))
 
 def go_to_start_pos(init_angle):
     for joints in range(len(init_angle)):
@@ -50,20 +82,35 @@ def angle_to_step(_angle, _transformation):
 
 signal.signal(signal.SIGINT, signal_handler)
 
-DXL_ID = [3]
-JOINTS = len(DXL_ID)
-TRANSFORMATION = [[-1,180]]
-
-# my_arm_controller = arm_control_utils.arm_controller(DXL_ID,devicename='/dev/ttyUSB0', baudrate=1000000)
-# my_arm_controller.initialize_motors()
-# my_arm_controller.enable_state_torque()
-
-
 pp = pprint.PrettyPrinter(indent=4)
 
-broker = "broker.hivemq.com"
-topic = "fyp/test"
-qos = 2
+broker = "test.mosquitto.org"
+topic = "fyp/sensors"
+qos = 0
+
+DXL_ID = [1,4,3]
+UNUSED_ID = [2]
+GRIPPER_ID = 5
+OPEN_LIMIT = 1023
+CLOSE_LIMIT = 1023 - 160 # 170 steps stands for 50 degrees
+JOINTS = len(DXL_ID)
+TRANSFORMATION = [[-1,180], [1,180],[-1,180]]
+ANGLE_LIMITS = [[-100,10], [-10,100], [-10,100]]
+RUN_MOTORS = 1
+STEP_DIFF = 22
+
+gripper_state = 0
+prev_steps = []
+at_init_pos = False
+
+if RUN_MOTORS:
+    my_arm_controller = arm_control_utils.arm_controller(DXL_ID,devicename='/dev/ttyUSB0', baudrate=1000000)
+    my_arm_controller.initialize_motors()
+    my_arm_controller.enable_state_torque()
+    for id in UNUSED_ID:
+        my_arm_controller.enable_torque(id)
+    my_arm_controller.enable_torque(GRIPPER_ID)
+    gripper_move(0)
 
 client = paho.Client("client_001", clean_session=True)
 client.on_connect = on_connect
@@ -74,34 +121,65 @@ client.connect(broker, 1883)
 client.loop_start()
 q = queue.Queue()
 
-prev_steps = []
-STEP_DIFF = 32
-at_init_pos = False
 
 while True:
-    message = q.get()
+    message = q.get(timeout=1000)
+
     msg = json.loads(message)
-    angles =[ msg['shoulder']['pitch']]
+    angles =[msg['shoulder']['pitch'], msg['shoulder']['yaw'], msg['elbow']['pitch']]
+    gripper = msg['is_gripper_close']
+    print(angles)
+
+
+    out_of_limits = False
+    for i in range(len(angles)):
+        # print(ANGLE_LIMITS[i][0])
+        if (angles[i] < ANGLE_LIMITS[i][0] or angles[i] > ANGLE_LIMITS[i][1]):
+            print("Out of limits. ID", DXL_ID[i])
+            out_of_limits = True
+            break
+    if out_of_limits:
+        continue
+        
     steps = angle_to_step(angles, TRANSFORMATION)
-    print(steps)
+    
+    # print(steps)
     if not at_init_pos:
-        # go_to_start_pos(steps)
+        if RUN_MOTORS:
+            go_to_start_pos(steps)
         at_init_pos = True
+        prev_steps = steps
+
     else:
+        # print(steps)
+        # print(prev_steps)
         n_max = -1
         for i in range(JOINTS):
-            if steps[i] - prev_steps[i] > STEP_DIFF:
-                n_max = max(n_max, (steps[i] - prev_steps[i])%STEP_DIFF)
+            n_max = max(n_max, abs(int((steps[i] - prev_steps[i])/STEP_DIFF)))
 
-        for i in range()
-        # my_arm_controller.write_state(steps)
+        # print(prev_steps)
+        # print(n_max)
+        
+        
+        split_angles = np.linspace(prev_steps, steps, n_max + 2).astype(int)
+        # why +2 -> 1024, 1032 and step is 5 (1032-1024)/5 = 1
+        # 1 + 2 = 3
+        # np.linspace(1024,1032, 3 ) = [1024., 1028., 1032.] is what we need
+        # print(len(split_angles))
+        for i in range(len(split_angles) - 1):
+            if RUN_MOTORS:
+                my_arm_controller.write_state(split_angles[i+1])
+                time.sleep(0.05)
+            # print(split_angles[i+1])
         
         # if diff between steps in more than n
-        step_diff = 32
         #  konse angle ka stepdiff sabse jyada he
         # uska stepdiff / 32 -> n
         # n parts me sab angles ko tod
+        # print()
+    if gripper != gripper_state:
+        if RUN_MOTORS: gripper_move(gripper)
+        gripper_state = gripper_state ^ 1
+        print("gripper moved")
 
-
-        time.sleep(0.05)
     prev_steps = steps

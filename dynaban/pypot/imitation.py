@@ -23,7 +23,7 @@ DXL_DICT_0      = dict(zip(MOTOR_ID, [0]*JOINTS))
 
 csv_file = sys.argv[1]
 urdf_file = "manipulator4_gripper.urdf"
-transformations = [[-1,90],[1,180], [-1,180]]
+transformations = [[-1,180],[1,180],[1,180],[-1,180]]
 # transformations = [[-1,180], [-1,180]]
 # transformations = [[-1,180],[-1,180],[-1,180]]
 my_manipulator_math_utils = mmu.manipulator_math_utils(JOINTS)
