@@ -1,3 +1,4 @@
+from tokenize import String
 import paho.mqtt.client as paho 
 import time
 import Queue as queue
@@ -21,6 +22,7 @@ def signal_handler(signal, frame):
     print("Stopping MQTT...")
     client.loop_stop()
     client.disconnect()
+    np.savetxt("delay_wo_motor.csv",delay_data)
     print("Goodbye!!!")
     sys.exit(0)
 
@@ -85,24 +87,30 @@ signal.signal(signal.SIGINT, signal_handler)
 pp = pprint.PrettyPrinter(indent=4)
 
 broker = "test.mosquitto.org"
-topic = "fyp/sensors"
+topic = "fyp/test"
 qos = 0
 
 DXL_ID = [1,4,3]
 UNUSED_ID = [2]
 GRIPPER_ID = 5
 OPEN_LIMIT = 1023
-CLOSE_LIMIT = 1023 - 160 # 170 steps stands for 50 degrees
+CLOSE_LIMIT = 1023 - 200 # 170 steps stands for 50 degrees
 JOINTS = len(DXL_ID)
-TRANSFORMATION = [[-1,180], [1,180],[-1,180]]
+TRANSFORMATION = [[-1,90], [1,180],[-1,180]] # left arm
+# TRANSFORMATION = [[1,270], [-1,180],[1,180]] # right arm
 ANGLE_LIMITS = [[-100,10], [-10,100], [-10,100]]
-RUN_MOTORS = 1
-STEP_DIFF = 22
+RUN_MOTORS = 0
+STEP_DIFF = 50
+
+human_angles = open("human_angles.csv","w")
+manipulator_angles = open("manipulator_angles.csv","w")
+
+delay_data = []
 
 gripper_state = 0
 prev_steps = []
 at_init_pos = False
-
+once = True
 if RUN_MOTORS:
     my_arm_controller = arm_control_utils.arm_controller(DXL_ID,devicename='/dev/ttyUSB0', baudrate=1000000)
     my_arm_controller.initialize_motors()
@@ -122,14 +130,22 @@ client.loop_start()
 q = queue.Queue()
 
 
+
 while True:
     message = q.get(timeout=1000)
-
     msg = json.loads(message)
     angles =[msg['shoulder']['pitch'], msg['shoulder']['yaw'], msg['elbow']['pitch']]
     gripper = msg['is_gripper_close']
-    print(angles)
-
+    if once:
+        init_msg_timestamp = msg['timestamp']
+        start_time = time.time()
+        once = False
+    t = time.time() - start_time
+    print(t)
+    print(msg['timestamp'])
+    delay_data.append(t)
+    time.sleep(0.05)
+    
 
     out_of_limits = False
     for i in range(len(angles)):
@@ -148,11 +164,15 @@ while True:
         if RUN_MOTORS:
             go_to_start_pos(steps)
         at_init_pos = True
+        q.empty()
         prev_steps = steps
+        
 
     else:
         # print(steps)
         # print(prev_steps)
+        
+
         n_max = -1
         for i in range(JOINTS):
             n_max = max(n_max, abs(int((steps[i] - prev_steps[i])/STEP_DIFF)))
@@ -166,20 +186,23 @@ while True:
         # 1 + 2 = 3
         # np.linspace(1024,1032, 3 ) = [1024., 1028., 1032.] is what we need
         # print(len(split_angles))
-        for i in range(len(split_angles) - 1):
-            if RUN_MOTORS:
-                my_arm_controller.write_state(split_angles[i+1])
-                time.sleep(0.05)
-            # print(split_angles[i+1])
+        # for i in range(len(split_angles) - 1):
+        #     if RUN_MOTORS:
+        #         my_arm_controller.write_state(split_angles[i+1])
+        #         time.sleep(0.05)
+        #     print(split_angles[i+1])
+
         
         # if diff between steps in more than n
         #  konse angle ka stepdiff sabse jyada he
         # uska stepdiff / 32 -> n
         # n parts me sab angles ko tod
         # print()
-    if gripper != gripper_state:
-        if RUN_MOTORS: gripper_move(gripper)
-        gripper_state = gripper_state ^ 1
-        print("gripper moved")
+    
+    
+    # if gripper != gripper_state:
+    #     if RUN_MOTORS: gripper_move(gripper)
+    #     gripper_state = gripper_state ^ 1
+    #     print("gripper moved")
 
     prev_steps = steps

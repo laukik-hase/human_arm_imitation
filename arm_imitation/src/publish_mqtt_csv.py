@@ -51,6 +51,7 @@ print("Publishing to", topic)
 csv_file = sys.argv[1]
 data = np.genfromtxt(csv_file, delimiter=',')
 angles = data[:,1:]
+gripper = data[:,-1]
 timestamps = data[:,0]
 
 for i in range(len(timestamps)):
@@ -58,7 +59,8 @@ for i in range(len(timestamps)):
     msg_dict = {
         'timestamp': timestamps[i],
         'shoulder': {'roll' : angles[i][1], 'pitch': angles[i][0], 'yaw': angles[i][2]},
-        'elbow': {'pitch': angles[i][3]}
+        'elbow': {'pitch': angles[i][3]},
+        'is_gripper_close':gripper[i]
     }
 
     msg_json = json.dumps(msg_dict, indent=4)
