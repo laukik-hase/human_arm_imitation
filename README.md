@@ -7,10 +7,6 @@
 - [Imitation of Human Arm using a 5-DoF Manipulator](#imitation-of-human-arm-using-a-5-dof-manipulator)
   - [Table of Contents](#table-of-contents)
   - [About The Project](#about-the-project)
-    - [Built With](#built-with)
-    - [Prerequisites](#prerequisites)
-  - [Usage](#usage)
-  - [Milestones and Future Work](#milestones-and-future-work)
   - [Contributors](#contributors)
   - [Resources](#resources)
   - [Acknowledgements](#acknowledgements)
@@ -30,25 +26,9 @@ modeling of the manipulator for precise and accurate control.
 
 - After establishing a stable system for arm imitation, it will be tested on applications like pick-and-place and tracing a curve.
 
-### Built With
+- Everything about the project: reports, progress, demos (photos and videos) can be found [here](https://drive.google.com/drive/folders/1VRj0Rsg3wywi9sTcepC8vw8A19dxCz2f?usp=sharing).
 
-_To-be-added_
-
-### Prerequisites
-
-_To-be-added_
-
-<!-- USAGE EXAMPLES -->
-
-## Usage
-
-_To-be-added_
-
-## Milestones and Future Work
-
-_To-be-added_
-
-<!-- CONTACT -->
+- For detailed description of the project, view this [report](human_arm_imitation.pdf).
 
 ## Contributors
 
@@ -63,7 +43,6 @@ _To-be-added_
 - [Concept Development Report](https://drive.google.com/drive/folders/1PC-iJiLeUT0hi6oHv0CTknUYlQUyzkWc?usp=sharing)
 - [Progress Status](https://drive.google.com/drive/folders/1OLMFB2oo_8WZqaWDnTHkVBi_Prd8paOJ?usp=sharing)
 - [References](https://drive.google.com/drive/folders/1Bxyq7_aq28y-IdtfYdROcifC5CevMQnE?usp=sharing)
-
 ## Acknowledgements
 
 - [AVITRA : 2019-2020](https://github.com/SRA-AVITRA)
